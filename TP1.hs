@@ -24,7 +24,11 @@ areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent roadMap city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadMap
 
 distance :: RoadMap -> City -> City -> Maybe Distance
-distance = undefined
+distance [] _ _ = Nothing
+distance ((c1, c2, d):rms) city1 city2
+    | city1 == city2 = Just 0
+    | (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1) = Just d
+    | otherwise = distance rms city1 city2
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent = undefined
