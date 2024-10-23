@@ -43,13 +43,17 @@ distance ((c1, c2, d):rms) city1 city2
 adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent = undefined
 
+-- Auxiliar function that is used in pathDistance
+-- Returns the sum of currentDistance and the distance between city1 and city2
+pathDistanceAux :: (RoadMap, City, City) -> Maybe Distance -> Maybe Distance
+pathDistanceAux (roadMap, city1, city2) currentDistance = sumDistance currentDistance (distance roadMap city1 city2)
+
 -- Returns the total distance between cities in a path
 -- The distance is Just 0 if there is only 1 city, Nothing if at least 2 cities are not connected, or Just n where n is the total distance
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance _ [] = Nothing
 pathDistance _ [city] = Just 0
-
-pathDistance rm (p:ps) = sumDistance (uncurry (distance rm) (head (zip (p:ps) ps))) (pathDistance rm ps)
+pathDistance roadMap (p:ps) = foldr pathDistanceAux (Just 0) [(roadMap, city1, city2) | (city1, city2) <- zip (p:ps) ps]
 
 rome :: RoadMap -> [City]
 rome = undefined
