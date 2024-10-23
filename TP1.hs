@@ -30,8 +30,12 @@ distance ((c1, c2, d):rms) city1 city2
     | (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1) = Just d
     | otherwise = distance rms city1 city2
 
+
+-- Returns the list of cities that are adjacent to the given city in the RoadMap.
+-- A city is adjacent to another city if there is a direct road between them.
 adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent = undefined
+adjacent roadMap city = [(c2, d) | (c1, c2, d) <- roadMap, c1 == city] ++ 
+                       [(c1, d) | (c1, c2, d) <- roadMap, c2 == city]
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance = undefined
