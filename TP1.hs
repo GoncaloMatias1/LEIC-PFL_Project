@@ -10,6 +10,14 @@ type City = String
 type Path = [City]
 type Distance = Int
 
+-- Auxiliar function to sum 2 values of type Maybe Distance
+-- Returns Nothing if one of the values is Nothing or Just Distance
+sumDistance :: Maybe Distance -> Maybe Distance -> Maybe Distance
+sumDistance _ Nothing = Nothing
+sumDistance Nothing _ = Nothing
+sumDistance (Just x) (Just y) = Just (x + y)
+
+
 type RoadMap = [(City,City,Distance)]
 
 -- Returns all unique cities in the RoadMap.
@@ -23,6 +31,8 @@ cities roadMap = Data.List.nub [city | (city1, city2, _) <- roadMap, city <- [ci
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent roadMap city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) roadMap
 
+-- Returns the distance between 2 cities
+-- The distance is Just 0 if the 2 cities are the same, Nothing if they are not connected, or Just n where n is the distance
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance [] _ _ = Nothing
 distance ((c1, c2, d):rms) city1 city2
@@ -37,8 +47,17 @@ adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent roadMap city = [(c2, d) | (c1, c2, d) <- roadMap, c1 == city] ++ 
                        [(c1, d) | (c1, c2, d) <- roadMap, c2 == city]
 
+-- Auxiliar function that is used in pathDistance
+-- Returns the sum of currentDistance and the distance between city1 and city2
+pathDistanceAux :: (RoadMap, City, City) -> Maybe Distance -> Maybe Distance
+pathDistanceAux (roadMap, city1, city2) currentDistance = sumDistance currentDistance (distance roadMap city1 city2)
+
+-- Returns the total distance between cities in a path
+-- The distance is Just 0 if there is only 1 city, Nothing if at least 2 cities are not connected, or Just n where n is the total distance
 pathDistance :: RoadMap -> Path -> Maybe Distance
-pathDistance = undefined
+pathDistance _ [] = Nothing
+pathDistance _ [city] = Just 0
+pathDistance roadMap (p:ps) = foldr pathDistanceAux (Just 0) [(roadMap, city1, city2) | (city1, city2) <- zip (p:ps) ps]
 
 rome :: RoadMap -> [City]
 rome = undefined
