@@ -59,8 +59,21 @@ pathDistance _ [] = Nothing
 pathDistance _ [city] = Just 0
 pathDistance roadMap (p:ps) = foldr pathDistanceAux (Just 0) [(roadMap, city1, city2) | (city1, city2) <- zip (p:ps) ps]
 
+-- Auxiliar function that is used in rome
+-- In a list with tuples where each tuple contains the city and the number of adjacent cities, it only keeps the ones with more connections
+selectRomeCities :: [(City, Int)] -> [(City, Int)]
+selectRomeCities [] = [("-1", 0)]
+selectRomeCities ((city, numAdjCities):cts)
+    | numAdjCities > snd (head z) = [(city, numAdjCities)]
+    | numAdjCities == snd (head z) = (city, numAdjCities) : z
+    | otherwise = z
+    where z = selectRomeCities cts
+
+
+-- Returns the cities with more adjacent cities, or empty if the roadMap is empty
 rome :: RoadMap -> [City]
-rome = undefined
+rome [] = []
+rome roadMap = map fst (selectRomeCities [(city, length (adjacent roadMap city)) | city <- cities roadMap])
 
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected = undefined
