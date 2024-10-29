@@ -75,8 +75,19 @@ rome :: RoadMap -> [City]
 rome [] = []
 rome roadMap = map fst (selectRomeCities [(city, length (adjacent roadMap city)) | city <- cities roadMap])
 
+-- Returns True if every city in the RoadMap can reach every other city, False otherwise
 isStronglyConnected :: RoadMap -> Bool
-isStronglyConnected = undefined
+isStronglyConnected [] = True
+isStronglyConnected roadMap = all (\city1 -> all (\city2 -> canReach city1 city2 []) uniqueCities) uniqueCities
+    where 
+        uniqueCities = Data.List.nub [city | (c1, c2, _) <- roadMap, city <- [c1, c2]]
+        canReach start end visited
+            | start == end = True
+            | start `elem` visited = False
+            | otherwise = any (\nextCity -> canReach nextCity end (start:visited)) nextCities
+            where
+                nextCities = [c2 | (c1, c2, _) <- roadMap, c1 == start] ++ 
+                            [c1 | (c1, c2, _) <- roadMap, c2 == start]
 
 shortestPath :: RoadMap -> City -> City -> [Path]
 shortestPath = undefined
