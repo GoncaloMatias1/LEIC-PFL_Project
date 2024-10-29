@@ -1,5 +1,5 @@
 import qualified Data.List
---import qualified Data.Array
+import qualified Data.Array
 --import qualified Data.Bits
 
 -- PFL 2024/2025 Practical assignment 1
@@ -44,7 +44,7 @@ distance ((c1, c2, d):rms) city1 city2
 -- Returns the list of cities that are adjacent to the given city in the RoadMap.
 -- A city is adjacent to another city if there is a direct road between them.
 adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent roadMap city = [(c2, d) | (c1, c2, d) <- roadMap, c1 == city] ++ 
+adjacent roadMap city = [(c2, d) | (c1, c2, d) <- roadMap, c1 == city] ++
                        [(c1, d) | (c1, c2, d) <- roadMap, c2 == city]
 
 -- Auxiliar function that is used in pathDistance
@@ -79,18 +79,45 @@ rome roadMap = map fst (selectRomeCities [(city, length (adjacent roadMap city))
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected [] = True
 isStronglyConnected roadMap = all (\city1 -> all (\city2 -> canReach city1 city2 []) uniqueCities) uniqueCities
-    where 
+    where
         uniqueCities = Data.List.nub [city | (c1, c2, _) <- roadMap, city <- [c1, c2]]
         canReach start end visited
             | start == end = True
             | start `elem` visited = False
             | otherwise = any (\nextCity -> canReach nextCity end (start:visited)) nextCities
             where
-                nextCities = [c2 | (c1, c2, _) <- roadMap, c1 == start] ++ 
+                nextCities = [c2 | (c1, c2, _) <- roadMap, c1 == start] ++
                             [c1 | (c1, c2, _) <- roadMap, c2 == start]
 
+
+-- Auxiliar function to sort priority queue
+sortQueue :: Data.Array.Array Int (Distance, [City]) -> City -> City -> Ordering
+sortQueue cityInfo c1 c2
+    | fst (cityInfo Data.Array.! (read c1 :: Int)) > fst (cityInfo Data.Array.! (read c2 :: Int)) = GT
+    | fst (cityInfo Data.Array.! (read c1 :: Int)) < fst (cityInfo Data.Array.! (read c2 :: Int)) = LT
+    | otherwise = EQ
+
+-- Auxiliar function to relax edges
+changeCityInfo :: Data.Array.Array Int (Distance, [City]) -> City -> [(City,Distance)] -> Data.Array.Array Int (Distance, [City])
+changeCityInfo cityInfo _ [] = cityInfo
+changeCityInfo cityInfo city ((c, distance):adj)
+    | fst (cityInfo Data.Array.! (read c :: Int)) > newDistance = changeCityInfo (cityInfo Data.Array.// [(read c :: Int, (newDistance, [city]))]) city adj
+    | fst (cityInfo Data.Array.! (read c :: Int)) == newDistance = changeCityInfo (cityInfo Data.Array.// [(read c :: Int, (newDistance, city : snd (cityInfo Data.Array.! (read c :: Int))))]) city adj
+    | otherwise = changeCityInfo cityInfo city adj
+    where newDistance = fst (cityInfo Data.Array.! (read city :: Int)) + distance
+
+-- Auxiliar function that executes dijkstra algorithm
+dijkstra :: RoadMap -> Data.Array.Array Int (Distance, [City]) -> [City] -> Data.Array.Array Int (Distance, [City])
+dijkstra _ cityInfo [] = cityInfo
+dijkstra roadMap cityInfo pQueue = dijkstra roadMap newCityInfo (Data.List.sortBy (sortQueue newCityInfo) (tail pQueue))
+    where newCityInfo = changeCityInfo cityInfo (head pQueue) (adjacent roadMap (head pQueue))
+
+-- Auxiliar function that creates a list of paths from cityInfo
+makingPaths :: City -> City -> Data.Array.Array Int (Distance, [City]) -> [Path] -> [Path]
+makingPaths orig dest cityInfo path = undefined
+
 shortestPath :: RoadMap -> City -> City -> [Path]
-shortestPath = undefined
+shortestPath roadMap orig dest = undefined -- Data.Array.array (1, length (cities roadMap) - 1) [i | i <- zip [0.. length (cities roadMap) - 1] (repeat (maxBound :: Int, []))] Data.Array.// Data.Array.array [(read orig :: Int, (0, []))]
 
 travelSales :: RoadMap -> Path
 travelSales = undefined
