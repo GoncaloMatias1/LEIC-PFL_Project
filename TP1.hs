@@ -109,15 +109,37 @@ changeCityInfo cityInfo city ((c, distance):adj)
 -- Auxiliar function that executes dijkstra algorithm
 dijkstra :: RoadMap -> Data.Array.Array Int (Distance, [City]) -> [City] -> Data.Array.Array Int (Distance, [City])
 dijkstra _ cityInfo [] = cityInfo
-dijkstra roadMap cityInfo pQueue = dijkstra roadMap newCityInfo (Data.List.sortBy (sortQueue newCityInfo) (tail pQueue))
+dijkstra roadMap cityInfo pQueue
+    | fst (cityInfo Data.Array.! (read (head pQueue) :: Int)) == (maxBound :: Int) = cityInfo
+    | otherwise = dijkstra roadMap newCityInfo (Data.List.sortBy (sortQueue newCityInfo) (tail pQueue))
     where newCityInfo = changeCityInfo cityInfo (head pQueue) (adjacent roadMap (head pQueue))
+
+-- Auxiliar function that adds a city to a path
+addCityToPath :: [Path] -> City -> [Path]
+addCityToPath [path] city = [city : path]
+
+-- Auxiliar function that calls makingPaths for a list of cities
+makingPathsAux :: City -> [City] -> Data.Array.Array Int (Distance, [City]) -> [Path] -> [Path]
+makingPathsAux orig [dest] cityInfo path = makingPaths orig dest cityInfo (addCityToPath path dest)
+makingPathsAux orig (dest:ds) cityInfo path = makingPaths orig dest cityInfo (addCityToPath path dest) ++ makingPathsAux orig ds cityInfo path
 
 -- Auxiliar function that creates a list of paths from cityInfo
 makingPaths :: City -> City -> Data.Array.Array Int (Distance, [City]) -> [Path] -> [Path]
-makingPaths orig dest cityInfo path = undefined
+makingPaths orig dest cityInfo path
+    | orig == dest = path
+    | null predCities = []
+    | length predCities > 1 = makingPathsAux orig predCities cityInfo path
+    | otherwise = makingPaths orig (head predCities) cityInfo (addCityToPath path (head predCities))
+    where predCities = snd (cityInfo Data.Array.! (read dest :: Int))
 
+
+-- Returns a list with all the shortest paths between 2 cities
+-- The list is empty if there i no path or contains only the city itself if the origin and destination city are the same
 shortestPath :: RoadMap -> City -> City -> [Path]
-shortestPath roadMap orig dest = undefined -- Data.Array.array (1, length (cities roadMap) - 1) [i | i <- zip [0.. length (cities roadMap) - 1] (repeat (maxBound :: Int, []))] Data.Array.// Data.Array.array [(read orig :: Int, (0, []))]
+shortestPath roadMap orig dest
+    | orig == dest = [[orig]]
+    | otherwise = makingPaths orig dest (dijkstra roadMap cityInfo (Data.List.sortBy (sortQueue cityInfo) (cities roadMap))) [[dest]]
+    where cityInfo = Data.Array.array (0, length (cities roadMap) - 1) (map (, (maxBound :: Int, [])) [0 .. length (cities roadMap) - 1]) Data.Array.// [(read orig :: Int, (0, []))]
 
 travelSales :: RoadMap -> Path
 travelSales = undefined
