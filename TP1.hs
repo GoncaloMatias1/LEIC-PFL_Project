@@ -1,6 +1,6 @@
 import qualified Data.List
 import qualified Data.Array
---import qualified Data.Bits
+import qualified Data.Bits
 
 -- PFL 2024/2025 Practical assignment 1
 
@@ -141,8 +141,60 @@ shortestPath roadMap orig dest
     | otherwise = makingPaths orig dest (dijkstra roadMap cityInfo (Data.List.sortBy (sortQueue cityInfo) (cities roadMap))) [[dest]]
     where cityInfo = Data.Array.array (0, length (cities roadMap) - 1) (map (, (maxBound :: Int, [])) [0 .. length (cities roadMap) - 1]) Data.Array.// [(read orig :: Int, (0, []))]
 
+-- Convert RoadMap to adjacency matrix
+createAdjMatrix :: RoadMap -> [City] -> Data.Array.Array (Int, Int) (Maybe Distance)
+createAdjMatrix roadMap cityList = 
+    Data.Array.array ((0,0), (n-1,n-1)) 
+        [((i,j), getDist i j) | i <- [0..n-1], j <- [0..n-1]]
+    where
+        n = length cityList
+        getDist i j 
+            | i == j = Just 0
+            | otherwise = distance roadMap (cityList !! i) (cityList !! j)
+
+-- Helper function to get city index in the list
+getCityIndex :: [City] -> City -> Int
+getCityIndex cities city = case Data.List.elemIndex city cities of
+    Just idx -> idx
+    Nothing -> error "City not found"
+
+-- Solve TSP using dynamic programming
+solveTSP :: Int -> Int -> Data.Array.Array (Int, Int) (Maybe Distance) -> Int -> (Maybe Distance, [Int])
+solveTSP pos mask adjMatrix n
+    | mask == (2^n - 1) = 
+        case adjMatrix Data.Array.! (pos, 0) of  -- Return to start
+            Nothing -> (Nothing, [])
+            Just d -> (Just d, [pos, 0])
+    | otherwise = 
+        let possibilities = [(nextCity, totalCost, nextPath) | 
+                           nextCity <- [0..n-1],
+                           not (Data.Bits.testBit mask nextCity),
+                           let newMask = Data.Bits.setBit mask nextCity,
+                           let (subCost, subPath) = solveTSP nextCity newMask adjMatrix n,
+                           let totalCost = case (adjMatrix Data.Array.! (pos, nextCity), subCost) of
+                                           (Just d1, Just d2) -> Just (d1 + d2)
+                                           _ -> Nothing,
+                           totalCost /= Nothing,
+                           let nextPath = subPath]
+        in case possibilities of
+            [] -> (Nothing, [])
+            ps -> let (nextCity, bestCost, bestPath) = 
+                        Data.List.minimumBy (\(_, Just c1, _) (_, Just c2, _) -> compare c1 c2) ps
+                 in (bestCost, pos : bestPath)
+
+-- Main TSP function
 travelSales :: RoadMap -> Path
-travelSales = undefined
+travelSales [] = []
+travelSales roadMap
+    | not (isStronglyConnected roadMap) = []
+    | otherwise = 
+        let cityList = cities roadMap
+            n = length cityList
+            adjMatrix = createAdjMatrix roadMap cityList
+            (minDist, path) = solveTSP 0 1 adjMatrix n  -- Start from city 0 with only itself visited
+        in case minDist of
+            Nothing -> []
+            Just _ -> map (cityList !!) path
 
 tspBruteForce :: RoadMap -> Path
 tspBruteForce = undefined -- only for groups of 3 people; groups of 2 people: do not edit this function
