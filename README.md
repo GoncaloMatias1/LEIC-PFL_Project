@@ -36,15 +36,15 @@ Returns the cities with more adjacent cities, or empty if the roadMap is empty
 
 Returns True if every city in the RoadMap can reach every other city, False otherwise
 
-# shortestPath
+# ShortestPath Function
 
 We use the dijkstra algorithm to calculate the minimum distance between the source and all other cities, and store the information in a Data.Array.Array Int (Distance, [City]), where Distance is minimum distance between the source and the city and [City] is a list of all predecessor cities.
 
 We chose to use an array because, if we assume all cities are ordered numbers starting in 0, it allows us to access its information in O(1) time if we use the city name to access a a position in the array.
 
-The function starts by calling the dijkstra function, which recieves an array initialized with maxBound :: Int in every value except the starting point
+The function starts by calling the dijkstra function, which receives an array initialized with maxBound :: Int in every value except the starting point
 
-In that function, it will analyse the city with the lowest distance in the array which wasn't yet visited, and update the array with new information. If the nearest city has maxBound :: Int distance or all cities are visited, it returns the array updated
+In that function, it will analyze the city with the lowest distance in the array which wasn't yet visited, and update the array with new information. If the nearest city has maxBound :: Int distance or all cities are visited, it returns the array updated
 
 Then we use the function makingPaths to create the shortest paths between the origin and our destination with the information in the array. If the 2 cities are not connected, the destination won't have predecessor cities (the list will be empty) and it will return an empty path
 
@@ -58,7 +58,7 @@ As asked by the project requirements, we were advised to use dynamic programming
 
 We also created a helper function createAdjMatrix to construct an adjacency matrix, so that we can more easily see the distances between the pair of cities. This is how the function works:
 - when two cities are connected, the distance is stored
-- when two cities are not connected, nothing is hold. 
+- when two cities are not connected, nothing is hold 
 
 The second helper function is getCityIndex, and we created it find a determined city index. This way we can reference cities in the adjacency matrix. This function also produces an error when a city is not found in the list. 
 
