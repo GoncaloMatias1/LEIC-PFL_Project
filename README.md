@@ -1,6 +1,6 @@
 # Group members
 
-- Gonçalo de Abreu Matias - 50% -> cities, areAdjacent, adjacent, isStronglyConnected, travelSales
+- Gonçalo de Abreu Matias (up202108703) - 50% -> cities, areAdjacent, adjacent, isStronglyConnected, travelSales
 - Gonçalo Guedes da Conceição (up202206456) - 50% -> distance, pathDistance, rome, shortestPath, auxiliar function sumDistance
 
 # shortestPath
