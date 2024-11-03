@@ -42,7 +42,11 @@ We use the dijkstra algorithm to calculate the minimum distance between the sour
 
 We chose to use an array because, if we assume all cities are ordered numbers starting in 0, it allows us to access its information in O(1) time if we use the city name to access a a position in the array.
 
-Then we use the function makingPaths to create the shortest paths between the origin and our destination with the information in the array.
+The function starts by calling the dijkstra function, which recieves an array initialized with maxBound :: Int in every value except the starting point
+
+In that function, it will analyse the city with the lowest distance in the array which wasn't yet visited, and update the array with new information. If the nearest city has maxBound :: Int distance or all cities are visited, it returns the array updated
+
+Then we use the function makingPaths to create the shortest paths between the origin and our destination with the information in the array. If the 2 cities are not connected, the destination won't have predecessor cities (the list will be empty) and it will return an empty path
 
 # TravelSales Function
 
