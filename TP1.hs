@@ -1,6 +1,6 @@
 import qualified Data.List
 import qualified Data.Array
---import qualified Data.Bits
+import qualified Data.Bits
 
 -- PFL 2024/2025 Practical assignment 1
 
@@ -141,8 +141,65 @@ shortestPath roadMap orig dest
     | otherwise = makingPaths orig dest (dijkstra roadMap cityInfo (Data.List.sortBy (sortQueue cityInfo) (cities roadMap))) [[dest]]
     where cityInfo = Data.Array.array (0, length (cities roadMap) - 1) (map (, (maxBound :: Int, [])) [0 .. length (cities roadMap) - 1]) Data.Array.// [(read orig :: Int, (0, []))]
 
+-- Converts city names to indices for easier array access
+cityToIndex :: [City] -> [(City, Int)]
+cityToIndex cities = zip cities [0..]
+
+-- Gets the index of a city from the mapping
+getIndex :: [(City, Int)] -> City -> Int
+getIndex mapping city = case lookup city mapping of
+    Just idx -> idx
+    Nothing -> error "City not found"
+
+-- Creates an adjacency matrix from the RoadMap
+createAdjMatrix :: RoadMap -> [City] -> Data.Array.Array (Int, Int) Distance
+createAdjMatrix roadMap cityList = 
+    Data.Array.array ((0,0), (n-1,n-1)) 
+        [((i,j), findDist i j) | i <- [0..n-1], j <- [0..n-1]]
+    where
+        n = length cityList
+        mapping = cityToIndex cityList
+        maxDist = sum [d | (_,_,d) <- roadMap] + 1
+        findDist i j
+            | i == j = 0
+            | otherwise = case distance roadMap (cityList !! i) (cityList !! j) of
+                Just d -> d
+                Nothing -> maxDist
+
+-- Solves TSP using dynamic programming
+tspDP :: Data.Array.Array (Int, Int) Distance -> Int -> Int -> Int -> Data.Array.Array (Int, Int) Int -> ([Int], Distance)
+tspDP dist n start pos visited
+    | allVisited = case dist Data.Array.! (pos, start) of
+                    d | d /= maxDist -> ([pos], d)
+                    _ -> ([], maxDist)
+    | otherwise = minimum [(pos:path, pathDist + dist Data.Array.! (pos,i)) 
+                         | i <- [0..n-1], 
+                           not (isVisited i),
+                           dist Data.Array.! (pos,i) /= maxDist,
+                           let (path, pathDist) = tspDP dist n start i (visit i visited)]
+    where
+        maxDist = sum [dist Data.Array.! (i,j) | i <- [0..n-1], j <- [0..n-1]]
+        allVisited = and [isVisited i | i <- [0..n-1]]
+        isVisited i = visited Data.Array.! (pos,i) == 1
+        visit i arr = arr Data.Array.// [((pos,i), 1)]
+
+-- Main TSP function
 travelSales :: RoadMap -> Path
-travelSales = undefined
+travelSales [] = []
+travelSales roadMap
+    | not (isStronglyConnected roadMap) = []
+    | otherwise = 
+        let cityList = cities roadMap
+            n = length cityList
+            dist = createAdjMatrix roadMap cityList
+            visited = Data.Array.array ((0,0), (n-1,n-1)) 
+                        [((i,j), if i == 0 && j == 0 then 1 else 0) 
+                         | i <- [0..n-1], j <- [0..n-1]]
+            (path, totalDist) = tspDP dist n 0 0 visited
+            maxDist = sum [d | (_,_,d) <- roadMap] + 1
+        in if totalDist >= maxDist 
+           then []
+           else map (cityList !!) (0:path ++ [0])
 
 tspBruteForce :: RoadMap -> Path
 tspBruteForce = undefined -- only for groups of 3 people; groups of 2 people: do not edit this function
