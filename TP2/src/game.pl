@@ -1,22 +1,21 @@
-
 % Dynamic predicates for game configuration
 :- dynamic game_config/2.
+:- use_module(library(lists)).
 
-/*
-    play/0
-    Main predicate that initializes the game and displays the menu.
-    Allows player to choose game mode and starts the game with selected configuration.
-*/
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                                MAIN GAME CONTROL
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 play :-
     display_title,
     display_menu,
     read_menu_option(Choice),
     setup_game(Choice).
 
-/*
-    display_title/0
-    Displays the game title in ASCII art for better presentation.
-*/
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                                MENU AND SETUP
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 display_title :-
     nl,
     write('===================================='), nl,
@@ -25,10 +24,6 @@ display_title :-
     write('===================================='), nl,
     nl.
 
-/*
-    display_menu/0
-    Shows the main menu options to the user.
-*/
 display_menu :-
     write('Select game mode:'), nl,
     write('1. Human vs Human'), nl,
@@ -38,27 +33,19 @@ display_menu :-
     write('0. Exit'), nl,
     write('Choose an option (0-4): ').
 
-/*
-    read_menu_option(-Choice)
-    Reads and validates user input for menu selection.
-    @param Choice The validated menu choice
-*/
 read_menu_option(Choice) :-
-    catch(read(Input), _, fail),
-    (   number(Input),
-        Input >= 0,
-        Input =< 4
-    ->  Choice = Input
-    ;   write('Invalid option! Please choose a number between 0 and 4.'), nl,
-        display_menu,
-        read_menu_option(Choice)
+    get_char(Input),
+    get_char(_), % consume newline
+    (  Input = '0' -> Choice = 0
+    ;  Input = '1' -> Choice = 1
+    ;  Input = '2' -> Choice = 2
+    ;  Input = '3' -> Choice = 3
+    ;  Input = '4' -> Choice = 4
+    ;  write('Invalid option! Please choose a number between 0 and 4.'), nl,
+       display_menu,
+       read_menu_option(Choice)
     ).
 
-/*
-    setup_game(+Choice)
-    Configures the game based on the selected menu option.
-    @param Choice The menu option selected by the user
-*/
 setup_game(0) :- 
     write('Thanks for playing!'), nl,
     halt.
@@ -70,13 +57,6 @@ setup_game(Choice) :-
     display_game(InitialState),
     game_loop(InitialState).
 
-/*
-    configure_game_mode(+Choice, -GameConfig)
-    Sets up the game configuration based on menu choice.
-    For computer players, also handles difficulty selection.
-    @param Choice The selected menu option
-    @param GameConfig The resulting game configuration
-*/
 configure_game_mode(Choice, GameConfig) :-
     (   Choice = 1 -> GameConfig = [human-human]
     ;   Choice = 2 -> configure_computer_difficulty(player2, Config), GameConfig = [human-Config]
@@ -86,12 +66,6 @@ configure_game_mode(Choice, GameConfig) :-
                      GameConfig = [Config1-Config2]
     ).
 
-/*
-    configure_computer_difficulty(+Player, -Config)
-    Handles computer difficulty selection for a specific player.
-    @param Player The player being configured (player1 or player2)
-    @param Config The resulting configuration including difficulty
-*/
 configure_computer_difficulty(Player, computer-Level) :-
     format('Select difficulty for ~w:', [Player]), nl,
     write('1. Easy (Random moves)'), nl,
@@ -104,3 +78,105 @@ configure_computer_difficulty(Player, computer-Level) :-
         configure_computer_difficulty(Player, computer-Level)
     ).
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            BOARD REPRESENTATION
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+% Board representation:
+% empty - empty square
+% w - white piece
+% b - black piece
+% wk - white king
+% bk - black king
+
+initial_state(GameConfig, state(Board, white, GameConfig)) :-
+    initial_board(Board).
+
+initial_board(Board) :-
+    empty_board(EmptyBoard),
+    place_initial_pieces(EmptyBoard, Board).
+
+empty_board([
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty]
+]).
+
+place_initial_pieces(Board, FinalBoard) :-
+    % Place black pieces in top-left corner (0,0 to 3,3)
+    place_black_pieces(Board, Board1),
+    % Place white pieces in bottom-right corner (4,4 to 7,7)
+    place_white_pieces(Board1, FinalBoard).
+
+place_black_pieces(Board, NewBoard) :-
+    % Place 2x2 square with king
+    replace_element(Board, 0, 0, bk, B1),   % King in corner
+    replace_element(B1, 0, 1, b, B2),       % Regular piece
+    replace_element(B2, 1, 0, b, B3),       % Regular piece
+    replace_element(B3, 1, 1, b, NewBoard). % Regular piece
+
+place_white_pieces(Board, NewBoard) :-
+    % Place 2x2 square with king
+    replace_element(Board, 7, 7, wk, B1),   % King in corner
+    replace_element(B1, 7, 6, w, B2),       % Regular piece
+    replace_element(B2, 6, 7, w, B3),       % Regular piece
+    replace_element(B3, 6, 6, w, NewBoard). % Regular piece
+
+% Helper predicate to place a piece on the board
+place_piece(Board, Piece, Row, Col, NewBoard) :-
+    replace_element(Board, Row, Col, Piece, NewBoard).
+
+% Replace element in a list of lists
+replace_element(Matrix, Row, Col, NewElement, NewMatrix) :-
+    nth0(Row, Matrix, OldRow),
+    replace_in_row(OldRow, Col, NewElement, NewRow),
+    replace_in_row(Matrix, Row, NewRow, NewMatrix).
+
+replace_in_row(List, Index, Element, NewList) :-
+    nth0(Index, List, _, TempList),
+    nth0(Index, NewList, Element, TempList).
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            DISPLAY FUNCTIONS
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+display_game(state(Board, Player, _)) :-
+    nl,
+    write('Current Player: '), write(Player), nl,
+    write('   1  2  3  4  5  6  7  8'), nl,
+    write('   -----------------------'), nl,
+    display_board(Board, 1),
+    nl.
+
+display_board([], _).
+display_board([Row|Rest], N) :-
+    format('~w |', [N]),
+    display_row(Row),
+    nl,
+    NextN is N + 1,
+    display_board(Rest, NextN).
+
+display_row([]).
+display_row([Cell|Rest]) :-
+    display_cell(Cell),
+    display_row(Rest).
+
+display_cell(empty) :- write(' . ').
+display_cell(w) :- write(' W ').
+display_cell(b) :- write(' B ').
+display_cell(wk) :- write('(W)').
+display_cell(bk) :- write('(B)').
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            GAME LOOP
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+game_loop(GameState) :-
+    display_game(GameState),
+    get_char(_),
+    true.
