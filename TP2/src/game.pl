@@ -114,18 +114,43 @@ place_initial_pieces(Board, FinalBoard) :-
     place_white_pieces(Board1, FinalBoard).
 
 place_black_pieces(Board, NewBoard) :-
-    % Place 2x2 square with king
+    % Place 2x2 square with king in corner
     replace_element(Board, 0, 0, bk, B1),   % King in corner
-    replace_element(B1, 0, 1, b, B2),       % Regular piece
-    replace_element(B2, 1, 0, b, B3),       % Regular piece
-    replace_element(B3, 1, 1, b, NewBoard). % Regular piece
+    replace_element(B1, 0, 1, b, B2),       % Regular piece right of king
+    replace_element(B2, 1, 0, b, B3),       % Regular piece below king
+    replace_element(B3, 1, 1, b, B4),       % Regular piece diagonal from king
+    
+    % Place right flanking pieces
+    replace_element(B4, 0, 2, b, B5),      % Top piece
+    replace_element(B5, 0, 3, b, B6),      % Top right piece
+    replace_element(B6, 1, 2, b, B7),      % Bottom piece
+    replace_element(B7, 1, 3, b, B8),      % Bottom right piece
+    
+    % Place bottom flanking pieces
+    replace_element(B8, 2, 0, b, B9),      % Left piece
+    replace_element(B9, 2, 1, b, B10),     % Right piece
+    replace_element(B10, 3, 0, b, B11),    % Bottom left piece
+    replace_element(B11, 3, 1, b, NewBoard). % Bottom right piece
 
 place_white_pieces(Board, NewBoard) :-
-    % Place 2x2 square with king
-    replace_element(Board, 7, 7, wk, B1),   % King in corner
-    replace_element(B1, 7, 6, w, B2),       % Regular piece
-    replace_element(B2, 6, 7, w, B3),       % Regular piece
-    replace_element(B3, 6, 6, w, NewBoard). % Regular piece
+    % Place 2x2 square with king in corner (bottom-right corner)
+    replace_element(Board, 7, 7, wk, B1),       % King in corner
+    replace_element(B1, 7, 6, w, B2),           % Left of king
+    replace_element(B2, 6, 7, w, B3),           % Above king
+    replace_element(B3, 6, 6, w, B4),           % Diagonal from king
+    
+    % Place "L" flanking pieces
+    % First 2x2 square to the left
+    replace_element(B4, 7, 4, w, B5),          % Bottom row
+    replace_element(B5, 7, 5, w, B6),          % Bottom row
+    replace_element(B6, 6, 4, w, B7),          % Top row
+    replace_element(B7, 6, 5, w, B8),          % Top row
+    
+    % Second 2x2 square above
+    replace_element(B8, 4, 7, w, B9),          % Bottom row
+    replace_element(B9, 4, 6, w, B10),         % Bottom row
+    replace_element(B10, 5, 7, w, B11),        % Top row
+    replace_element(B11, 5, 6, w, NewBoard).   % Top row
 
 % Helper predicate to place a piece on the board
 place_piece(Board, Piece, Row, Col, NewBoard) :-
