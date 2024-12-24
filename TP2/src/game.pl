@@ -71,9 +71,9 @@ configure_computer_difficulty(Player, computer-Level) :-
     write('1. Easy (Random moves)'), nl,
     write('2. Hard (Strategic moves)'), nl,
     write('Choose difficulty (1-2): '),
-    read(Choice),
-    (   Choice = 1 -> Level = 1
-    ;   Choice = 2 -> Level = 2
+    get_char(Choice),
+    (   Choice = '1' -> Level = 1
+    ;   Choice = '2' -> Level = 2
     ;   write('Invalid choice. Please select 1 or 2.'), nl,
         configure_computer_difficulty(Player, computer-Level)
     ).
@@ -201,7 +201,50 @@ display_cell(bk) :- write('(B)').
                             GAME LOOP
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-game_loop(GameState) :-
-    display_game(GameState),
-    get_char(_),
+game_loop(state(Board, Player, GameConfig)) :-
+    display_game(state(Board, Player, GameConfig)),
+    get_move(state(Board, Player, GameConfig), newState),
     true.
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            MOVES
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+get_move(state(Board, white, [human-_]), newState) :-
+    write('Select the piece you want to move by writing Row-Column.'), nl,
+    read(PieceRow-PieceColumn),
+    PieceRow > 0,
+    PieceRow =< 8,
+    PieceColumn > 0,
+    PieceColumn =< 8,
+    write('Select the place you want to move by writing Row-Column.'), nl,
+    read(DestinationRow-DestinationColumn),
+    DestinationRow > 0,
+    DestinationRow =< 8,
+    DestinationColumn > 0,
+    DestinationColumn =< 8,
+    move(state(Board, white, [human-_]), (PieceRow, PieceColumn, DestinationRow, DestinationColumn), newState),
+    true.
+
+
+move(state(Board, white, GameConfig), (PieceRow, PieceColumn, DestinationRow, DestinationColumn), newState) :-
+    get_piece(Board, PieceRow, PieceColumn, P),
+    P \= empty,
+    P = w,
+    true.
+
+
+get_piece_in_row([P|_], 1, P) :- !.
+
+get_piece_in_row([Piece|Pieces], PieceColumn, P) :- 
+    N is PieceColumn - 1,
+    get_piece_in_row(Pieces, N, P).
+
+get_piece([Row|_], 1, PieceColumn, P) :- 
+    !,
+    get_piece_in_row(Row, PieceColumn, P).
+
+get_piece([Row|Rows], PieceRow, PieceColumn, P) :- 
+    N is PieceRow - 1,
+    get_piece(Rows, N, PieceColumn, P).
