@@ -232,7 +232,7 @@ move(state(Board, white, GameConfig), (PieceRow, PieceColumn, DestinationRow, De
     get_piece(Board, PieceRow, PieceColumn, P),
     P \= empty,
     P = w,
-    true.
+    validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, DestinationRow, DestinationColumn)).
 
 
 get_piece_in_row([P|_], 1, P) :- !.
@@ -248,3 +248,21 @@ get_piece([Row|_], 1, PieceColumn, P) :-
 get_piece([Row|Rows], PieceRow, PieceColumn, P) :- 
     N is PieceRow - 1,
     get_piece(Rows, N, PieceColumn, P).
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            MOVE VALIDATION
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+is_forward_move(white, StartRow, _, EndRow, _) :-
+    StartRow > EndRow.  
+is_forward_move(black, StartRow, _, EndRow, _) :-
+    StartRow < EndRow.  
+
+is_destination_empty(Board, Row, Col) :-
+    get_piece(Board, Row, Col, empty).
+
+validate_move(state(Board, Player, _), (StartRow, StartCol, EndRow, EndCol)) :-
+    get_piece(Board, StartRow, StartCol, Piece),
+    (Player = white, (Piece = w ; Piece = wk)) ->  
+    is_forward_move(Player, StartRow, StartCol, EndRow, EndCol),
+    is_destination_empty(Board, EndRow, EndCol).  
