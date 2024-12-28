@@ -178,7 +178,7 @@ display_game(state(Board, Player, _)) :-
     display_board(Board, 1),
     nl.
 
-display_board([], _).
+display_board([], _) :- !.
 display_board([Row|Rest], N) :-
     format('~w |', [N]),
     display_row(Row),
@@ -186,15 +186,15 @@ display_board([Row|Rest], N) :-
     NextN is N + 1,
     display_board(Rest, NextN).
 
-display_row([]).
+display_row([]) :- !.
 display_row([Cell|Rest]) :-
     display_cell(Cell),
     display_row(Rest).
 
-display_cell(empty) :- write(' . ').
-display_cell(w) :- write(' W ').
-display_cell(b) :- write(' B ').
-display_cell(wk) :- write('(W)').
+display_cell(empty) :- !, write(' . ').
+display_cell(w) :- !, write(' W ').
+display_cell(b) :- !, write(' B ').
+display_cell(wk) :- !, write('(W)').
 display_cell(bk) :- write('(B)').
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -202,8 +202,8 @@ display_cell(bk) :- write('(B)').
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 game_loop(state(Board, Player, GameConfig)) :-
-    display_game(state(Board, Player, GameConfig)),
-    get_move(state(Board, Player, GameConfig), newState),
+    get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, GameConfig)),
+    display_game(state(NewBoard, NewPlayer, GameConfig)),
     true.
 
 
@@ -211,28 +211,31 @@ game_loop(state(Board, Player, GameConfig)) :-
                             MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-get_move(state(Board, white, [human-_]), newState) :-
+get_move(state(Board, white, [human-_]), newState(NewBoard, NewPlayer, _)) :-
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
+    get_char(_), % consume newline
     PieceRow > 0,
     PieceRow =< 8,
     PieceColumn > 0,
     PieceColumn =< 8,
-    write('Select the place you want to move by writing Row-Column.'), nl,
-    read(DestinationRow-DestinationColumn),
-    DestinationRow > 0,
-    DestinationRow =< 8,
-    DestinationColumn > 0,
-    DestinationColumn =< 8,
-    move(state(Board, white, [human-_]), (PieceRow, PieceColumn, DestinationRow, DestinationColumn), newState),
-    true.
+    write('Select the direction you want to move'), nl,
+    write('1. Horizontal'), nl,
+    write('2. Vertical'), nl,
+    write('3. Diagonal'), nl,
+    write('Choose an option: '), nl,
+    get_char(Input),
+    get_char(_), % consume newline
+    (Input = '1' -> Direction = 'H'
+    ;  Input = '2' -> Direction = 'V'
+    ;  Input = '3' -> Direction = 'D'),
+    move(state(Board, white, [human-_]), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
 
 
-move(state(Board, white, GameConfig), (PieceRow, PieceColumn, DestinationRow, DestinationColumn), newState) :-
+move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
-    P \= empty,
-    P = w,
-    validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, DestinationRow, DestinationColumn)).
+    (P = w ; P = wk),
+    validate_move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
 
 
 get_piece_in_row([P|_], 1, P) :- !.
@@ -253,16 +256,100 @@ get_piece([Row|Rows], PieceRow, PieceColumn, P) :-
                             MOVE VALIDATION
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-is_forward_move(white, StartRow, _, EndRow, _) :-
-    StartRow > EndRow.  
-is_forward_move(black, StartRow, _, EndRow, _) :-
-    StartRow < EndRow.  
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Piece, NewBoard) :-
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PieceRow, PC, P),
+    (P = w ; P = wk),
+    !,
+    calculate_destination(state(Board, white, _), (PieceRow, PC, 'H'), Piece, NewBoard).
 
-is_destination_empty(Board, Row, Col) :-
-    get_piece(Board, Row, Col, empty).
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Piece, NewBoard) :-
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PieceRow, PC, P),
+    P = empty,
+    !,
+    PR is PieceRow - 1,
+    PC2 is PC - 1,
+    replace_element(Board, PR, PC2, Piece, NewBoard).
 
-validate_move(state(Board, Player, _), (StartRow, StartCol, EndRow, EndCol)) :-
-    get_piece(Board, StartRow, StartCol, Piece),
-    (Player = white, (Piece = w ; Piece = wk)) ->  
-    is_forward_move(Player, StartRow, StartCol, EndRow, EndCol),
-    is_destination_empty(Board, EndRow, EndCol).  
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Piece, NewBoard) :-
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PieceRow, PC, P),
+    P = b,
+    PR is PieceRow - 1,
+    PC2 is PC - 1,
+    replace_element(Board, PR, PC2, Piece, NewBoard).
+
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    get_piece(Board, PR, PieceColumn, P),
+    (P = w ; P = wk),
+    !,
+    calculate_destination(state(Board, white, _), (PR, PieceColumn, 'V'), Piece, NewBoard).
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    get_piece(Board, PR, PieceColumn, P),
+    P = empty,
+    !,
+    PR2 is PR - 1,
+    PC is PieceColumn - 1,
+    replace_element(Board, PR2, PC, Piece, NewBoard).
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    get_piece(Board, PR, PieceColumn, P),
+    P = b,
+    PR2 is PR - 1,
+    PC is PieceColumn - 1,
+    replace_element(Board, PR2, PC, Piece, NewBoard).
+
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PR, PC, P),
+    (P = w ; P = wk),
+    !,
+    calculate_destination(state(Board, white, _), (PR, PC, 'D'), Piece, NewBoard).
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PR, PC, P),
+    P = empty,
+    !,
+    PR2 is PR - 1,
+    PC2 is PC - 1,
+    replace_element(Board, PR2, PC2, Piece, NewBoard).
+
+calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), Piece, NewBoard) :-
+    PR is PieceRow - 1,
+    PR > 0,
+    PC is PieceColumn - 1,
+    PC > 0,
+    get_piece(Board, PR, PC, P),
+    P = b,
+    PR2 is PR - 1,
+    PC2 is PC - 1,
+    replace_element(Board, PR2, PC2, Piece, NewBoard).
+
+
+validate_move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, black, _)) :-
+    get_piece(Board, PieceRow, PieceColumn, Piece),
+    (Piece = w ; Piece = wk),
+    calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, Direction), Piece, NB),
+    PR is PieceRow - 1,
+    PC is PieceColumn - 1,
+    replace_element(NB, PR, PC, empty, NewBoard).
