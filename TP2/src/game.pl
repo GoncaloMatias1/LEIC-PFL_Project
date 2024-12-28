@@ -427,6 +427,35 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Piec
     PC2 is PC + 1,
     replace_element(Board, PR2, PC2, Piece, NewBoard).
 
+% Black capture moves
+calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), Piece, NewBoard) :-
+    PC is PieceColumn + 1,
+    PC < 9,
+    get_piece(Board, PieceRow, PC, P),
+    P = w,
+    PR is PieceRow + 1,
+    PC2 is PC + 1,
+    replace_element(Board, PR, PC2, Piece, NewBoard).
+
+calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), Piece, NewBoard) :-
+    PR is PieceRow + 1,
+    PR < 9,
+    get_piece(Board, PR, PieceColumn, P),
+    P = w,
+    PR2 is PR + 1,
+    PC is PieceColumn + 1,
+    replace_element(Board, PR2, PC, Piece, NewBoard).
+
+calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Piece, NewBoard) :-
+    PR is PieceRow + 1,
+    PR < 9,
+    PC is PieceColumn + 1,
+    PC < 9,
+    get_piece(Board, PR, PC, P),
+    P = w,
+    PR2 is PR + 1,
+    PC2 is PC + 1,
+    replace_element(Board, PR2, PC2, Piece, NewBoard).
 
 validate_move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, black, _)) :-
     get_piece(Board, PieceRow, PieceColumn, Piece),
