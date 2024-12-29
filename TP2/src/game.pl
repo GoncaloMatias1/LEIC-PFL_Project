@@ -204,7 +204,7 @@ display_cell(bk) :- write('(B)').
 game_loop(state(Board, Player, GameConfig)) :-
     get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, GameConfig)),
     display_game(state(NewBoard, NewPlayer, GameConfig)),
-    true.
+    game_loop(state(NewBoard, NewPlayer, GameConfig)).
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
