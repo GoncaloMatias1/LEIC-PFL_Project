@@ -248,48 +248,156 @@ game_loop(state(Board, Player, GameConfig)) :-
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            TRANSFORM MOVES
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+% Handle transform move for white
+move(state(Board, white, _), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
+    get_piece(Board, KingRow, KingCol, wk),  % Verify selected piece is a white king
+    write('Select the piece to transform (Row-Column): '), nl,
+    read(TargetRow-TargetCol),
+    get_char(_),
+    get_piece(Board, TargetRow, TargetCol, w),  % Verify target is a white piece
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    TR is TargetRow - 1,
+    TC is TargetCol - 1,
+    replace_element(Board, TR, TC, wk, NewBoard).
+
+% Handle transform move for black
+move(state(Board, black, _), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
+    get_piece(Board, KingRow, KingCol, bk),  % Verify selected piece is a black king
+    write('Select the piece to transform (Row-Column): '), nl,
+    read(TargetRow-TargetCol),
+    get_char(_),
+    get_piece(Board, TargetRow, TargetCol, b),  % Verify target is a black piece
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    TR is TargetRow - 1,
+    TC is TargetCol - 1,
+    replace_element(Board, TR, TC, bk, NewBoard).
+
+% Check if there's clear line of sight between two positions
+check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol) :-
+    (KingRow = TargetRow -> check_horizontal_sight(Board, KingRow, KingCol, TargetCol)
+    ; KingCol = TargetCol -> check_vertical_sight(Board, KingCol, KingRow, TargetRow)
+    ; abs(KingRow - TargetRow) =:= abs(KingCol - TargetCol) -> 
+        check_diagonal_sight(Board, KingRow, KingCol, TargetRow, TargetCol)
+    ).
+
+% Check horizontal line of sight
+check_horizontal_sight(Board, Row, Col1, Col2) :-
+    MinCol is min(Col1, Col2) + 1,
+    MaxCol is max(Col1, Col2) - 1,
+    \+ has_enemy_between_horizontal(Board, Row, MinCol, MaxCol).
+
+% Check vertical line of sight
+check_vertical_sight(Board, Col, Row1, Row2) :-
+    MinRow is min(Row1, Row2) + 1,
+    MaxRow is max(Row1, Row2) - 1,
+    \+ has_enemy_between_vertical(Board, Col, MinRow, MaxRow).
+
+% Check diagonal line of sight
+check_diagonal_sight(Board, Row1, Col1, Row2, Col2) :-
+    DirRow is sign(Row2 - Row1),
+    DirCol is sign(Col2 - Col1),
+    \+ has_enemy_between_diagonal(Board, Row1, Col1, Row2, Col2, DirRow, DirCol).
+
+% Helper predicates to check for enemy pieces
+has_enemy_between_horizontal(Board, Row, Col, MaxCol) :-
+    Col =< MaxCol,
+    get_piece(Board, Row, Col, Piece),
+    (Piece = b ; Piece = bk ; Piece = w ; Piece = wk), !.
+has_enemy_between_horizontal(Board, Row, Col, MaxCol) :-
+    Col < MaxCol,
+    NextCol is Col + 1,
+    has_enemy_between_horizontal(Board, Row, NextCol, MaxCol).
+
+has_enemy_between_vertical(Board, Col, Row, MaxRow) :-
+    Row =< MaxRow,
+    get_piece(Board, Row, Col, Piece),
+    (Piece = b ; Piece = bk ; Piece = w ; Piece = wk), !.
+has_enemy_between_vertical(Board, Col, Row, MaxRow) :-
+    Row < MaxRow,
+    NextRow is Row + 1,
+    has_enemy_between_vertical(Board, Col, NextRow, MaxRow).
+
+has_enemy_between_diagonal(Board, Row, Col, TargetRow, TargetCol, DirRow, DirCol) :-
+    NextRow is Row + DirRow,
+    NextCol is Col + DirCol,
+    (NextRow = TargetRow, NextCol = TargetCol -> false
+    ; get_piece(Board, NextRow, NextCol, Piece),
+      (Piece = b ; Piece = bk ; Piece = w ; Piece = wk) -> true
+    ; has_enemy_between_diagonal(Board, NextRow, NextCol, TargetRow, TargetCol, DirRow, DirCol)
+    ).
+
+sign(N, 1) :- N > 0, !.
+sign(N, -1) :- N < 0, !.
+sign(0, 0).
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
                             MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-get_move(state(Board, white, [human-_]), newState(NewBoard, NewPlayer, _)) :-
+get_move(state(Board, white, [human-_]), NewState) :-
+    repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
     get_char(_), % consume newline
-    PieceRow > 0,
-    PieceRow =< 8,
-    PieceColumn > 0,
-    PieceColumn =< 8,
-    write('Select the direction you want to move'), nl,
-    write('1. Horizontal'), nl,
-    write('2. Vertical'), nl,
-    write('3. Diagonal'), nl,
-    write('Choose an option: '), nl,
-    get_char(Input),
-    get_char(_), % consume newline
-    (Input = '1' -> Direction = 'H'
-    ;  Input = '2' -> Direction = 'V'
-    ;  Input = '3' -> Direction = 'D'),
-    move(state(Board, white, [human-_]), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
+    (   PieceRow > 0,
+        PieceRow =< 8,
+        PieceColumn > 0,
+        PieceColumn =< 8
+    ->  write('Select the action you want to perform'), nl,
+        write('1. Horizontal'), nl,
+        write('2. Vertical'), nl,
+        write('3. Diagonal'), nl,
+        write('4. Transform'), nl,  
+        write('Choose an option: '), nl,
+        get_char(Input),
+        get_char(_), % consume newline
+        (Input = '1' -> Direction = 'H'
+        ;  Input = '2' -> Direction = 'V'
+        ;  Input = '3' -> Direction = 'D'
+        ;  Input = '4' -> Direction = 'T'),
+        (move(state(Board, white, [human-_]), (PieceRow, PieceColumn, Direction), NewState)
+        -> true
+        ; (Direction = 'T' 
+          -> write('Transform not possible - no line of sight or invalid target. Try another move.'), nl, fail
+          ; write('Invalid move. Try again.'), nl, fail
+        ))
+    ;   write('Invalid coordinates. Try again.'), nl,
+        fail
+    ).
 
-get_move(state(Board, black, [human-_]), newState(NewBoard, NewPlayer, _)) :-
+get_move(state(Board, black, [human-_]), NewState) :-
+    repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
     get_char(_), % consume newline
-    PieceRow > 0,
-    PieceRow =< 8,
-    PieceColumn > 0,
-    PieceColumn =< 8,
-    write('Select the direction you want to move'), nl,
-    write('1. Horizontal'), nl,
-    write('2. Vertical'), nl,
-    write('3. Diagonal'), nl,
-    write('Choose an option: '), nl,
-    get_char(Input),
-    get_char(_), % consume newline
-    (Input = '1' -> Direction = 'H'
-    ;  Input = '2' -> Direction = 'V'
-    ;  Input = '3' -> Direction = 'D'),
-    move(state(Board, black, [human-_]), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
+    (   PieceRow > 0,
+        PieceRow =< 8,
+        PieceColumn > 0,
+        PieceColumn =< 8
+    ->  write('Select the action you want to perform'), nl,
+        write('1. Horizontal'), nl,
+        write('2. Vertical'), nl,
+        write('3. Diagonal'), nl,
+        write('4. Transform'), nl,  
+        write('Choose an option: '), nl,
+        get_char(Input),
+        get_char(_), % consume newline
+        (Input = '1' -> Direction = 'H'
+        ;  Input = '2' -> Direction = 'V'
+        ;  Input = '3' -> Direction = 'D'
+        ;  Input = '4' -> Direction = 'T'),
+        (move(state(Board, black, [human-_]), (PieceRow, PieceColumn, Direction), NewState)
+        -> true
+        ; (Direction = 'T' 
+          -> write('Transform not possible - no line of sight or invalid target. Try another move.'), nl, fail
+          ; write('Invalid move. Try again.'), nl, fail
+        ))
+    ;   write('Invalid coordinates. Try again.'), nl,
+        fail
+    ).
 
 move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
