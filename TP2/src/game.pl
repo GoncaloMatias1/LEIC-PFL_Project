@@ -301,7 +301,7 @@ calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Piec
     PC is PieceColumn - 1,
     PC > 0,
     get_piece(Board, PieceRow, PC, P),
-    P = b,
+    (P = b ; P = bk),
     PR is PieceRow - 1,
     PC2 is PC - 1,
     replace_element(Board, PR, PC2, Piece, NewBoard).
@@ -329,7 +329,7 @@ calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), Piec
     PR is PieceRow - 1,
     PR > 0,
     get_piece(Board, PR, PieceColumn, P),
-    P = b,
+    (P = b ; P = bk),
     PR2 is PR - 1,
     PC is PieceColumn - 1,
     replace_element(Board, PR2, PC, Piece, NewBoard).
@@ -363,7 +363,7 @@ calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), Piec
     PC is PieceColumn - 1,
     PC > 0,
     get_piece(Board, PR, PC, P),
-    P = b,
+    (P = b ; P = bk),
     PR2 is PR - 1,
     PC2 is PC - 1,
     replace_element(Board, PR2, PC2, Piece, NewBoard).
@@ -390,7 +390,7 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), Piec
     PC is PieceColumn + 1,
     PC < 9,
     get_piece(Board, PieceRow, PC, P),
-    P = w,
+    (P = w ; P = wk),
     PR is PieceRow - 1,  
     PC2 is PC - 1,       
     replace_element(Board, PR, PC2, Piece, NewBoard).
@@ -417,7 +417,7 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), Piec
     PR is PieceRow + 1,
     PR < 9,
     get_piece(Board, PR, PieceColumn, P),
-    P = w,
+    (P = w ; P = wk),
     PR2 is PR - 1,      
     PC is PieceColumn - 1,  
     replace_element(Board, PR2, PC, Piece, NewBoard).
@@ -450,7 +450,7 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Piec
     PC is PieceColumn + 1,
     PC < 9,
     get_piece(Board, PR, PC, P),
-    P = w,
+    (P = w ; P = wk),
     PR2 is PR - 1,    
     PC2 is PC - 1,    
     replace_element(Board, PR2, PC2, Piece, NewBoard).
