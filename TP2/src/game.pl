@@ -198,13 +198,53 @@ display_cell(wk) :- !, write('(W)').
 display_cell(bk) :- write('(B)').
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                            GAME OVER CONDITIONS
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+% game_over(+GameState, -Winner)
+game_over(state(Board, _, _), Winner) :-
+    % Check if white has a king in black's starting corner (top-left)
+    get_piece(Board, 1, 1, wk), !,
+    Winner = white.
+
+game_over(state(Board, _, _), Winner) :-
+    % Check if black has a king in white's starting corner (bottom-right)
+    get_piece(Board, 8, 8, bk), !,
+    Winner = black.
+
+game_over(state(Board, _, _), Winner) :-
+    % Check if black has no kings left
+    \+ has_king(Board, black), !,
+    Winner = white.
+
+game_over(state(Board, _, _), Winner) :-
+    % Check if white has no kings left
+    \+ has_king(Board, white), !,
+    Winner = black.
+
+% has_king(+Board, +Player)
+has_king(Board, white) :-
+    member(Row, Board),
+    member(wk, Row), !.
+
+has_king(Board, black) :-
+    member(Row, Board),
+    member(bk, Row), !.
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
                             GAME LOOP
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 game_loop(state(Board, Player, GameConfig)) :-
-    get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, GameConfig)),
-    display_game(state(NewBoard, NewPlayer, GameConfig)),
-    game_loop(state(NewBoard, NewPlayer, GameConfig)).
+    (   game_over(state(Board, Player, GameConfig), Winner)
+    ->  display_game(state(Board, Player, GameConfig)),
+        format('Game Over! Winner: ~w~n', [Winner])
+    ;   get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, GameConfig)),
+        display_game(state(NewBoard, NewPlayer, GameConfig)),
+        game_loop(state(NewBoard, NewPlayer, GameConfig))
+    ).
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
