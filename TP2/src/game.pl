@@ -1,6 +1,7 @@
 % Dynamic predicates for game configuration
 :- dynamic game_config/2.
 :- use_module(library(lists)).
+:- use_module(library(random)).
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
                                 MAIN GAME CONTROL
@@ -62,20 +63,21 @@ configure_game_mode(Choice, GameConfig) :-
     ;   Choice = 2 -> configure_computer_difficulty(player2, Config), GameConfig = [human-Config]
     ;   Choice = 3 -> configure_computer_difficulty(player1, Config), GameConfig = [Config-human]
     ;   Choice = 4 -> configure_computer_difficulty(player1, Config1),
+                     get_char(_),
                      configure_computer_difficulty(player2, Config2),
                      GameConfig = [Config1-Config2]
     ).
 
-configure_computer_difficulty(Player, computer-Level) :-
+configure_computer_difficulty(Player, Config) :-
     format('Select difficulty for ~w:', [Player]), nl,
     write('1. Easy (Random moves)'), nl,
     write('2. Hard (Strategic moves)'), nl,
     write('Choose difficulty (1-2): '),
     get_char(Choice),
-    (   Choice = '1' -> Level = 1
-    ;   Choice = '2' -> Level = 2
+    (   Choice = '1' -> Config = level1
+    ;   Choice = '2' -> Config = level2
     ;   write('Invalid choice. Please select 1 or 2.'), nl,
-        configure_computer_difficulty(Player, computer-Level)
+        configure_computer_difficulty(Player, Config)
     ).
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -251,8 +253,8 @@ game_loop(state(Board, Player, GameConfig)) :-
                             TRANSFORM MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-% Handle transform move for white
-move(state(Board, white, _), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
+% Handle transform move for white human player
+move(state(Board, white, [human-_]), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
     get_piece(Board, KingRow, KingCol, wk),  % Verify selected piece is a white king
     write('Select the piece to transform (Row-Column): '), nl,
     read(TargetRow-TargetCol),
@@ -263,8 +265,8 @@ move(state(Board, white, _), (KingRow, KingCol, 'T'), newState(NewBoard, black, 
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, wk, NewBoard).
 
-% Handle transform move for black
-move(state(Board, black, _), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
+% Handle transform move for black human player
+move(state(Board, black, [_-human]), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
     get_piece(Board, KingRow, KingCol, bk),  % Verify selected piece is a black king
     write('Select the piece to transform (Row-Column): '), nl,
     read(TargetRow-TargetCol),
@@ -274,6 +276,29 @@ move(state(Board, black, _), (KingRow, KingCol, 'T'), newState(NewBoard, white, 
     TR is TargetRow - 1,
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, bk, NewBoard).
+
+% Handle transform move for white random computer
+move(state(Board, white, [level1-_]), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
+    get_piece(Board, KingRow, KingCol, wk),  % Verify selected piece is a white king
+    random(1, 9, TargetRow),
+    random(1, 9, TargetCol),
+    get_piece(Board, TargetRow, TargetCol, w),  % Verify target is a white piece
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    TR is TargetRow - 1,
+    TC is TargetCol - 1,
+    replace_element(Board, TR, TC, wk, NewBoard).
+
+% Handle transform move for black random computer
+move(state(Board, black, [_-level1]), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
+    get_piece(Board, KingRow, KingCol, bk),  % Verify selected piece is a black king
+    random(1, 9, TargetRow),
+    random(1, 9, TargetCol),
+    get_piece(Board, TargetRow, TargetCol, b),  % Verify target is a black piece
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    TR is TargetRow - 1,
+    TC is TargetCol - 1,
+    replace_element(Board, TR, TC, bk, NewBoard).
+
 
 % Check if there's clear line of sight between two positions
 check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol) :-
@@ -368,7 +393,7 @@ get_move(state(Board, white, [human-_]), NewState) :-
         fail
     ).
 
-get_move(state(Board, black, [human-_]), NewState) :-
+get_move(state(Board, black, [_-human]), NewState) :-
     repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
@@ -398,6 +423,28 @@ get_move(state(Board, black, [human-_]), NewState) :-
     ;   write('Invalid coordinates. Try again.'), nl,
         fail
     ).
+
+get_move(state(Board, white, [level1-_]), NewState) :-
+    repeat,
+    choose_move(state(Board, white, _), level1, (PieceRow, PieceColumn, Direction)),
+    move(state(Board, white, [level1-_]), (PieceRow, PieceColumn, Direction), NewState).
+
+get_move(state(Board, black, [_-level1]), NewState) :-
+    repeat,
+    choose_move(state(Board, black, [_-level1]), level1, (PieceRow, PieceColumn, Direction)),
+    move(state(Board, black, [_-level1]), (PieceRow, PieceColumn, Direction), NewState).
+
+
+choose_move(state(Board, white, _), level1, (PieceRow, PieceColumn, Direction)) :-
+    random(1, 9, PieceRow),
+    random(1, 9, PieceColumn),
+    random_member(Direction, ['H', 'V', 'D', 'T']).
+
+choose_move(state(Board, black, _), level1, (PieceRow, PieceColumn, Direction)) :-
+    random(1, 9, PieceRow),
+    random(1, 9, PieceColumn),
+    random_member(Direction, ['H', 'V', 'D', 'T']).
+
 
 move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
