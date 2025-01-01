@@ -436,13 +436,13 @@ get_move(state(Board, black, [_-level1]), NewState) :-
 
 
 choose_move(state(Board, white, _), level1, (PieceRow, PieceColumn, Direction)) :-
-    random(1, 9, PieceRow),
-    random(1, 9, PieceColumn),
+    get_all_pieces(Board, white, AllPieces),
+    random_member(PieceRow-PieceColumn, AllPieces),
     random_member(Direction, ['H', 'V', 'D', 'T']).
 
 choose_move(state(Board, black, _), level1, (PieceRow, PieceColumn, Direction)) :-
-    random(1, 9, PieceRow),
-    random(1, 9, PieceColumn),
+    get_all_pieces(Board, black, AllPieces),
+    random_member(PieceRow-PieceColumn, AllPieces),
     random_member(Direction, ['H', 'V', 'D', 'T']).
 
 
@@ -469,6 +469,62 @@ get_piece([Row|_], 1, PieceColumn, P) :-
 get_piece([Row|Rows], PieceRow, PieceColumn, P) :- 
     N is PieceRow - 1,
     get_piece(Rows, N, PieceColumn, P).
+
+
+get_all_pieces(Board, Player, AllPieces) :-
+    get_all_pieces(Board, Player, 1, [], AllPieces).
+
+get_all_pieces([], _, _, AllPieces, AllPieces) :- !.
+
+get_all_pieces([Row|Rows], white, RowNumber, Aux, AllPieces) :-
+    get_all_pieces_row(Row, white, RowNumber, 1, [], AllPiecesRow),
+    N is RowNumber + 1,
+    append(Aux, AllPiecesRow, Aux2),
+    get_all_pieces(Rows, white, N, Aux2, AllPieces).
+
+
+get_all_pieces([Row|Rows], black, RowNumber, Aux, AllPieces) :-
+    get_all_pieces_row(Row, black, RowNumber, 1, [], AllPiecesRow),
+    N is RowNumber + 1,
+    append(Aux, AllPiecesRow, Aux2),
+    get_all_pieces(Rows, black, N, Aux2, AllPieces).
+
+
+get_all_pieces_row([], _, _, _, AllPiecesRow, AllPiecesRow) :- !.
+
+get_all_pieces_row([Piece|Pieces], white, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    Piece = w,
+    !,
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, white, RowNumber, N, [(RowNumber-ColumnNumber)|Aux], AllPiecesRow).
+
+get_all_pieces_row([Piece|Pieces], white, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    Piece = wk,
+    !,
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, white, RowNumber, N, [(RowNumber-ColumnNumber)|Aux], AllPiecesRow).
+
+get_all_pieces_row([Piece|Pieces], white, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    !,
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, white, RowNumber, N, Aux, AllPiecesRow).
+
+get_all_pieces_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    Piece = b,
+    !,
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, black, RowNumber, N, [(RowNumber-ColumnNumber)|Aux], AllPiecesRow).
+
+get_all_pieces_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    Piece = bk,
+    !,
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, black, RowNumber, N, [(RowNumber-ColumnNumber)|Aux], AllPiecesRow).
+
+get_all_pieces_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, AllPiecesRow) :-
+    N is ColumnNumber + 1,
+    get_all_pieces_row(Pieces, black, RowNumber, N, Aux, AllPiecesRow).
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
                             MOVE VALIDATION
