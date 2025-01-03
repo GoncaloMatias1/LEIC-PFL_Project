@@ -717,9 +717,9 @@ test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC),
     test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR2, PC2), Move).
 
 test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC), Move) :-
-    PR2 is PR - 1,
+    PR2 is PR + 1,
     PR2 > 0,
-    PC2 is PC - 1,
+    PC2 is PC + 1,
     PC2 > 0,
     get_piece(Board, PR2, PC2, P),
     (P = w ; P = wk),
