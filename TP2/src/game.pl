@@ -464,7 +464,41 @@ select_best_move([], AllPieces, (PieceRow, PieceColumn, Direction)) :-
     random_member(Direction, ['H', 'V', 'D', 'T']).
 
 select_best_move(BestMoves, _, Move) :-
-    random_member(Move, BestMoves).
+    separate_moves(BestMoves, KingMoves, OtherMoves),
+    select_king_other(KingMoves, OtherMoves, Move).
+
+
+select_king_other([], OtherMoves, Move) :-
+    !,
+    random_member(Move, OtherMoves).
+
+select_king_other(KingMoves, _, Move) :-
+    random_member(Move, KingMoves).
+
+
+separate_moves(BestMoves, KingMoves, OtherMoves) :-
+    separate_moves(BestMoves, [], [], KingMoves, OtherMoves).
+
+separate_moves([], KingMoves, OtherMoves, KingMoves, OtherMoves) :- !.
+
+separate_moves([(PieceRow, PieceColumn, Direction, Piece)|BestMoves], KingAux, OtherAux, KingMoves, OtherMoves) :-
+    Piece = w,
+    !,
+    separate_moves(BestMoves, KingAux, [(PieceRow, PieceColumn, Direction)|OtherAux], KingMoves, OtherMoves).
+
+separate_moves([(PieceRow, PieceColumn, Direction, Piece)|BestMoves], KingAux, OtherAux, KingMoves, OtherMoves) :-
+    Piece = b,
+    !,
+    separate_moves(BestMoves, KingAux, [(PieceRow, PieceColumn, Direction)|OtherAux], KingMoves, OtherMoves).
+
+separate_moves([(PieceRow, PieceColumn, Direction, Piece)|BestMoves], KingAux, OtherAux, KingMoves, OtherMoves) :-
+    Piece = wk,
+    !,
+    separate_moves(BestMoves, [(PieceRow, PieceColumn, Direction)|KingAux], OtherAux, KingMoves, OtherMoves).
+
+separate_moves([(PieceRow, PieceColumn, Direction, Piece)|BestMoves], KingAux, OtherAux, KingMoves, OtherMoves) :-
+    Piece = bk,
+    separate_moves(BestMoves, [(PieceRow, PieceColumn, Direction)|KingAux], OtherAux, KingMoves, OtherMoves).
 
 
 move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
@@ -561,6 +595,17 @@ get_best_moves(Board, white, [(PieceRow-PieceColumn)|Pieces], Aux, BestMoves) :-
     append(MoveD, M2, Moves),
     get_best_moves(Board, white, Pieces, Moves, BestMoves).
 
+get_best_moves(Board, black, [], BestMoves, BestMoves) :- !.
+
+get_best_moves(Board, black, [(PieceRow-PieceColumn)|Pieces], Aux, BestMoves) :- 
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), PieceColumn, MoveH),
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), PieceRow, MoveV),
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PieceRow, PieceColumn), MoveD),
+    append(MoveH, Aux, M1),
+    append(MoveV, M1, M2),
+    append(MoveD, M2, Moves),
+    get_best_moves(Board, black, Pieces, Moves, BestMoves).
+
 
 test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
     PC2 is PC - 1,
@@ -576,7 +621,7 @@ test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), PC, Move)
     get_piece(Board, PieceRow, PC2, P),
     (P = b ; P = bk),
     !,
-    Move = [(PieceRow, PieceColumn, 'H')].
+    Move = [(PieceRow, PieceColumn, 'H', P)].
 
 test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
     Move = [].
@@ -595,7 +640,7 @@ test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), PR, Move)
     get_piece(Board, PR2, PieceColumn, P),
     (P = b ; P = bk),
     !,
-    Move = [(PieceRow, PieceColumn, 'V')].
+    Move = [(PieceRow, PieceColumn, 'V', P)].
 
 test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'V'), PR, Move) :-
     Move = [].
@@ -618,9 +663,70 @@ test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), (PR, PC),
     get_piece(Board, PR2, PC2, P),
     (P = b ; P = bk),
     !,
-    Move = [(PieceRow, PieceColumn, 'D')].
+    Move = [(PieceRow, PieceColumn, 'D', P)].
 
 test_destination(state(Board, white, _), (PieceRow, PieceColumn, 'D'), (PR, PC), Move) :-
+    Move = [].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
+    PC2 is PC + 1,
+    PC2 > 0,
+    get_piece(Board, PieceRow, PC2, P),
+    (P = b ; P = bk),
+    !,
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), PC2, Move).
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
+    PC2 is PC + 1,
+    PC2 > 0,
+    get_piece(Board, PieceRow, PC2, P),
+    (P = w ; P = wk),
+    !,
+    Move = [(PieceRow, PieceColumn, 'H', P)].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
+    Move = [].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), PR, Move) :-
+    PR2 is PR + 1,
+    PR2 > 0,
+    get_piece(Board, PR2, PieceColumn, P),
+    (P = b ; P = bk),
+    !,
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), PR2, Move).
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), PR, Move) :-
+    PR2 is PR + 1,
+    PR2 > 0,
+    get_piece(Board, PR2, PieceColumn, P),
+    (P = w ; P = wk),
+    !,
+    Move = [(PieceRow, PieceColumn, 'V', P)].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'V'), PR, Move) :-
+    Move = [].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC), Move) :-
+    PR2 is PR + 1,
+    PR2 > 0,
+    PC2 is PC + 1,
+    PC2 > 0,
+    get_piece(Board, PR2, PC2, P),
+    (P = b ; P = bk),
+    !,
+    test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR2, PC2), Move).
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC), Move) :-
+    PR2 is PR - 1,
+    PR2 > 0,
+    PC2 is PC - 1,
+    PC2 > 0,
+    get_piece(Board, PR2, PC2, P),
+    (P = w ; P = wk),
+    !,
+    Move = [(PieceRow, PieceColumn, 'D', P)].
+
+test_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC), Move) :-
     Move = [].
 
 
