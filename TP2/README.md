@@ -4,64 +4,115 @@
 ### Group Information
 | Name             | Student Number | Contribution % | Tasks Performed |
 |------------------|---------------|----------------|-----------------|
-| Gonçalo Guedes da Conceição | [up202206456]      | [%]            | [Description]   |
-| Gonçalo de Abreu Matias | [up202108703]      | [%]            | [Description]   |
+| Gonçalo Guedes da Conceição | up202206456 | 50% |  METER | Get piece based on move, White Player 1 move validation, PC level 1/2 |
+| Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king |
 
 ### Installation and Execution
-1. Ensure SICStus Prolog 4.9 is installed on your system
-2. [Additional installation steps to be added]
-3. [Execution instructions to be added]
+#### Windows
+1. Install SICStus Prolog 4.9 following the official installation guide
+2. Navigate to the game directory
+3. Launch SICStus Prolog
+4. Consult the main game file: `consult('game.pl').`
+5. Start the game by typing: `play.`
+
+#### Linux
+1. Install SICStus Prolog 4.9 using your distribution's package manager
+2. Follow the same steps 2-5 as Windows
 
 ### Game Description
-Replica is a strategic two-player board game played on a standard 8x8 chessboard. The game combines elements of checkers with unique movement and transformation mechanics.
+Replica is a strategic two-player board game played on an 8x8 chessboard. The game combines elements of checkers with unique movement and transformation mechanics.
 
-#### Components
-- 8x8 chessboard
-- 12 white flippable checkers
-- 12 black flippable checkers
+#### Basic Rules
+- Players start with 12 pieces each (11 regular pieces and 1 king)
+- Pieces move in three ways:
+  1. Step: One square forward
+  2. Jump: Multiple squares over friendly pieces
+  3. Transform: Convert regular piece to king
 
-#### Initial Setup
-- Players place their pieces in opposite corners
-- Each player starts with a 2x2 square in the corner, flanked by a 2x2 square on each side
-- The pieces in the very corner start flipped over (indicating kings)
+#### Victory Conditions
+- Moving a king to the opponent's corner
+- Capturing the opponent's king
 
-#### Game Rules
+[vou meter aqui imagens]
 
-##### Movement Types
-1. **Step**
-   - Move one square forward
-   - Can capture enemy pieces by replacement
-   - Must move in one of the three directions towards the opponent's corner
+#### Information Sources
+- [Replica on Board Game Geek](https://boardgamegeek.com/boardgame/427267/replica)
+- Official documentation from designer
 
-2. **Jump**
-   - Move in a straight line over friendly pieces
-   - Stops at the first empty square or enemy piece
-   - Can capture enemy pieces by replacement
-   - Must move in one of the three directions towards the opponent's corner
+### Game Extension Considerations
+1. **Variable Board Sizes**
+   - Current implementation uses 8x8 board
+   - Code structured to allow future board size modifications
+   - Movement calculations independent of board size
 
-3. **Transform**
-   - Convert a regular piece to a king
-   - Target piece must be in line-of-sight of a friendly king
-   - Enemy pieces block line of sight
-   - Does not involve movement
+2. **Optional Rules**
+   - Framework in place for additional king powers
+   - Simplified ruleset for beginners possible
+   - Advanced rules for experts can be added
 
-##### Victory Conditions
-The game ends when either:
-1. A player moves any friendly king to the opposite corner
-2. A player captures any enemy king
+### Game Logic
+#### Game Configuration Representation
+The game configuration is represented using the following structure:
+```prolog
+state(Board, Player, GameConfig)
+```
+- Board: 8x8 matrix representing the game board
+- Player: current player (white/black)
+- GameConfig: game mode and AI configuration
 
-##### Turn Structure
-1. White moves first
-2. Players alternate turns
-3. One move type per turn (step, jump, or transform)
+#### Internal Game State Representation
+Pieces are represented as:
+- `empty`: Empty square
+- `w`: White piece
+- `b`: Black piece
+- `wk`: White king
+- `bk`: Black king
 
-#### Optional House Rules
-Kings can be given special powers such as:
-- Moving all kings in one turn
-- Double moves for kings
-- Backward capture ability
+Example states:
+```prolog
+% Initial state snippet
+[empty,empty,empty,empty,empty,empty,empty,empty],
+[bk,b,empty,empty,empty,empty,empty,empty],
+...
 
-### Source
-[Replica on Board Game Geek](https://boardgamegeek.com/boardgame/427267/replica)
+% Intermediate state snippet
+[empty,empty,w,empty,empty,empty,empty,empty],
+[empty,bk,empty,b,empty,empty,empty,empty],
+...
 
-[Additional sections for game implementation details, considerations, and conclusions will be added later]
+% Final state snippet
+[wk,empty,empty,empty,empty,empty,empty,empty],
+[empty,empty,empty,empty,empty,empty,empty,empty],
+...
+```
+
+#### Move Representation
+Moves are represented as:
+```prolog
+(PieceRow, PieceColumn, Direction)
+```
+- PieceRow, PieceColumn: Coordinates (1-8)
+- Direction: 'H' (Horizontal), 'V' (Vertical), 'D' (Diagonal), 'T' (Transform)
+
+#### User Interaction
+- Menu-driven interface with clear options
+- Input validation for:
+  - Menu selections (1-4)
+  - Move coordinates (1-8)
+  - Movement direction
+- Error messages for invalid inputs
+- Board visualization after each move
+
+### Conclusions
+#### Current Limitations
+- Basic AI implementation
+- Limited undo/redo functionality
+- No game state saving
+
+#### Future Improvements
+1. Enhanced AI with deeper strategic thinking
+2. GUI implementation
+
+### Bibliography
+1. [SICStus Prolog Documentation](https://sicstus.sics.se/documentation.html)
+2. [Replica Board Game Official Rules](https://boardgamegeek.com/boardgame/427267/replica)
