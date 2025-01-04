@@ -4,7 +4,7 @@
 ### Group Information
 | Name             | Student Number | Contribution % | Tasks Performed |
 |------------------|---------------|----------------|-----------------|
-| Gonçalo Guedes da Conceição | up202206456 | 50% |  METER | Get piece based on move, White Player 1 move validation, PC level 1/2 |
+| Gonçalo Guedes da Conceição | up202206456 | 50% | Get piece based on move, White Player 1 move validation, PC level 1 and level 2 implementation|
 | Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king |
 
 ### Installation and Execution
