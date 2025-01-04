@@ -215,25 +215,14 @@ game_over(state(Board, _, _), Winner) :-
     get_piece(Board, 8, 8, bk), !,
     Winner = black.
 
-game_over(state(Board, _, _), Winner) :-
-    % Check if black has no kings left
-    \+ has_king(Board, black), !,
-    Winner = white.
-
-game_over(state(Board, _, _), Winner) :-
-    % Check if white has no kings left
-    \+ has_king(Board, white), !,
+game_over(state(Board, white, gameOver), Winner) :-
+    % Check if gameConfig is gameOver after black play
+    !,
     Winner = black.
 
-% has_king(+Board, +Player)
-has_king(Board, white) :-
-    member(Row, Board),
-    member(wk, Row), !.
-
-has_king(Board, black) :-
-    member(Row, Board),
-    member(bk, Row), !.
-
+game_over(state(Board, black, gameOver), Winner) :-
+    % Check if gameConfig is gameOver after white play
+    Winner = white.
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
                             GAME LOOP
@@ -241,11 +230,10 @@ has_king(Board, black) :-
 
 game_loop(state(Board, Player, GameConfig)) :-
     (   game_over(state(Board, Player, GameConfig), Winner)
-    ->  display_game(state(Board, Player, GameConfig)),
-        format('Game Over! Winner: ~w~n', [Winner])
-    ;   get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, GameConfig)),
-        display_game(state(NewBoard, NewPlayer, GameConfig)),
-        game_loop(state(NewBoard, NewPlayer, GameConfig))
+    ->  format('Game Over! Winner: ~w~n', [Winner])
+    ;   get_move(state(Board, Player, GameConfig), newState(NewBoard, NewPlayer, NewGameConfig)),
+        display_game(state(NewBoard, NewPlayer, NewGameConfig)),
+        game_loop(state(NewBoard, NewPlayer, NewGameConfig))
     ).
 
 
@@ -254,106 +242,122 @@ game_loop(state(Board, Player, GameConfig)) :-
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 % Handle transform move for white human player
-move(state(Board, white, [human-_]), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
+move(state(Board, white, [human-Config]), (KingRow, KingCol, 'T'), newState(NewBoard, black, [human-Config])) :-
     !,
     get_piece(Board, KingRow, KingCol, wk),  % Verify selected piece is a white king
     write('Select the piece to transform (Row-Column): '), nl,
     read(TargetRow-TargetCol),
     get_char(_),
     get_piece(Board, TargetRow, TargetCol, w),  % Verify target is a white piece
-    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol, white),
     TR is TargetRow - 1,
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, wk, NewBoard).
 
 % Handle transform move for black human player
-move(state(Board, black, [_-human]), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
+move(state(Board, black, [Config-human]), (KingRow, KingCol, 'T'), newState(NewBoard, white, [Config-human])) :-
     !,
     get_piece(Board, KingRow, KingCol, bk),  % Verify selected piece is a black king
     write('Select the piece to transform (Row-Column): '), nl,
     read(TargetRow-TargetCol),
     get_char(_),
     get_piece(Board, TargetRow, TargetCol, b),  % Verify target is a black piece
-    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol, black),
     TR is TargetRow - 1,
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, bk, NewBoard).
 
 % Handle transform move for white computer
-move(state(Board, white, _), (KingRow, KingCol, 'T'), newState(NewBoard, black, _)) :-
+move(state(Board, white, GameConfig), (KingRow, KingCol, 'T'), newState(NewBoard, black, GameConfig)) :-
     get_piece(Board, KingRow, KingCol, wk),  % Verify selected piece is a white king
     get_all_pieces(Board, white, AllPieces),
     random_member(TargetRow-TargetCol, AllPieces),
     get_piece(Board, TargetRow, TargetCol, w),  % Verify target is a white piece
-    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol, white),
     TR is TargetRow - 1,
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, wk, NewBoard).
 
 % Handle transform move for black computer
-move(state(Board, black, _), (KingRow, KingCol, 'T'), newState(NewBoard, white, _)) :-
+move(state(Board, black, GameConfig), (KingRow, KingCol, 'T'), newState(NewBoard, white, GameConfig)) :-
     get_piece(Board, KingRow, KingCol, bk),  % Verify selected piece is a black king
     get_all_pieces(Board, black, AllPieces),
     random_member(TargetRow-TargetCol, AllPieces),
     get_piece(Board, TargetRow, TargetCol, b),  % Verify target is a black piece
-    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol),
+    check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol, black),
     TR is TargetRow - 1,
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, bk, NewBoard).
 
 
 % Check if there's clear line of sight between two positions
-check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol) :-
-    (KingRow = TargetRow -> check_horizontal_sight(Board, KingRow, KingCol, TargetCol)
-    ; KingCol = TargetCol -> check_vertical_sight(Board, KingCol, KingRow, TargetRow)
+check_line_of_sight(Board, KingRow, KingCol, TargetRow, TargetCol, Player) :-
+    (KingRow = TargetRow -> check_horizontal_sight(Board, KingRow, KingCol, TargetCol, Player)
+    ; KingCol = TargetCol -> check_vertical_sight(Board, KingCol, KingRow, TargetRow, Player)
     ; abs(KingRow - TargetRow) =:= abs(KingCol - TargetCol) -> 
-        check_diagonal_sight(Board, KingRow, KingCol, TargetRow, TargetCol)
+        check_diagonal_sight(Board, KingRow, KingCol, TargetRow, TargetCol, Player)
     ).
 
 % Check horizontal line of sight
-check_horizontal_sight(Board, Row, Col1, Col2) :-
+check_horizontal_sight(Board, Row, Col1, Col2, Player) :-
     MinCol is min(Col1, Col2) + 1,
     MaxCol is max(Col1, Col2) - 1,
-    \+ has_enemy_between_horizontal(Board, Row, MinCol, MaxCol).
+    \+ has_enemy_between_horizontal(Board, Row, MinCol, MaxCol, Player).
 
 % Check vertical line of sight
-check_vertical_sight(Board, Col, Row1, Row2) :-
+check_vertical_sight(Board, Col, Row1, Row2, Player) :-
     MinRow is min(Row1, Row2) + 1,
     MaxRow is max(Row1, Row2) - 1,
-    \+ has_enemy_between_vertical(Board, Col, MinRow, MaxRow).
+    \+ has_enemy_between_vertical(Board, Col, MinRow, MaxRow, Player).
 
 % Check diagonal line of sight
-check_diagonal_sight(Board, Row1, Col1, Row2, Col2) :-
+check_diagonal_sight(Board, Row1, Col1, Row2, Col2, Player) :-
     DirRow is sign(Row2 - Row1),
     DirCol is sign(Col2 - Col1),
-    \+ has_enemy_between_diagonal(Board, Row1, Col1, Row2, Col2, DirRow, DirCol).
+    \+ has_enemy_between_diagonal(Board, Row1, Col1, Row2, Col2, DirRow, DirCol, Player).
 
 % Helper predicates to check for enemy pieces
-has_enemy_between_horizontal(Board, Row, Col, MaxCol) :-
+has_enemy_between_horizontal(Board, Row, Col, MaxCol, white) :-
     Col =< MaxCol,
     get_piece(Board, Row, Col, Piece),
-    (Piece = b ; Piece = bk ; Piece = w ; Piece = wk), !.
-has_enemy_between_horizontal(Board, Row, Col, MaxCol) :-
+    (Piece = b ; Piece = bk), !.
+has_enemy_between_horizontal(Board, Row, Col, MaxCol, black) :-
+    Col =< MaxCol,
+    get_piece(Board, Row, Col, Piece),
+    (Piece = w ; Piece = wk), !.
+has_enemy_between_horizontal(Board, Row, Col, MaxCol, Player) :-
     Col < MaxCol,
     NextCol is Col + 1,
-    has_enemy_between_horizontal(Board, Row, NextCol, MaxCol).
+    has_enemy_between_horizontal(Board, Row, NextCol, MaxCol, Player).
 
-has_enemy_between_vertical(Board, Col, Row, MaxRow) :-
+has_enemy_between_vertical(Board, Col, Row, MaxRow, white) :-
     Row =< MaxRow,
     get_piece(Board, Row, Col, Piece),
-    (Piece = b ; Piece = bk ; Piece = w ; Piece = wk), !.
-has_enemy_between_vertical(Board, Col, Row, MaxRow) :-
+    (Piece = b ; Piece = bk), !.
+has_enemy_between_vertical(Board, Col, Row, MaxRow, black) :-
+    Row =< MaxRow,
+    get_piece(Board, Row, Col, Piece),
+    (Piece = w ; Piece = wk), !.
+has_enemy_between_vertical(Board, Col, Row, MaxRow, Player) :-
     Row < MaxRow,
     NextRow is Row + 1,
-    has_enemy_between_vertical(Board, Col, NextRow, MaxRow).
+    has_enemy_between_vertical(Board, Col, NextRow, MaxRow, Player).
 
-has_enemy_between_diagonal(Board, Row, Col, TargetRow, TargetCol, DirRow, DirCol) :-
+has_enemy_between_diagonal(Board, Row, Col, TargetRow, TargetCol, DirRow, DirCol, white) :-
     NextRow is Row + DirRow,
     NextCol is Col + DirCol,
     (NextRow = TargetRow, NextCol = TargetCol -> false
     ; get_piece(Board, NextRow, NextCol, Piece),
-      (Piece = b ; Piece = bk ; Piece = w ; Piece = wk) -> true
-    ; has_enemy_between_diagonal(Board, NextRow, NextCol, TargetRow, TargetCol, DirRow, DirCol)
+      (Piece = b ; Piece = bk) -> true
+    ; has_enemy_between_diagonal(Board, NextRow, NextCol, TargetRow, TargetCol, DirRow, DirCol, white)
+    ).
+has_enemy_between_diagonal(Board, Row, Col, TargetRow, TargetCol, DirRow, DirCol, black) :-
+    NextRow is Row + DirRow,
+    NextCol is Col + DirCol,
+    (NextRow = TargetRow, NextCol = TargetCol -> false
+    ; get_piece(Board, NextRow, NextCol, Piece),
+      (Piece = w ; Piece = wk) -> true
+    ; has_enemy_between_diagonal(Board, NextRow, NextCol, TargetRow, TargetCol, DirRow, DirCol, black)
     ).
 
 sign(N, 1) :- N > 0, !.
@@ -364,7 +368,7 @@ sign(0, 0).
                             MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-get_move(state(Board, white, [human-_]), NewState) :-
+get_move(state(Board, white, [human-Config]), NewState) :-
     repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
@@ -385,7 +389,7 @@ get_move(state(Board, white, [human-_]), NewState) :-
         ;  Input = '2' -> Direction = 'V'
         ;  Input = '3' -> Direction = 'D'
         ;  Input = '4' -> Direction = 'T'),
-        (move(state(Board, white, [human-_]), (PieceRow, PieceColumn, Direction), NewState)
+        (move(state(Board, white, [human-Config]), (PieceRow, PieceColumn, Direction), NewState)
         -> true
         ; (Direction = 'T' 
           -> write('Transform not possible - no line of sight or invalid target. Try another move.'), nl, fail
@@ -395,7 +399,7 @@ get_move(state(Board, white, [human-_]), NewState) :-
         fail
     ).
 
-get_move(state(Board, black, [_-human]), NewState) :-
+get_move(state(Board, black, [Config-human]), NewState) :-
     repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
     read(PieceRow-PieceColumn),
@@ -416,7 +420,7 @@ get_move(state(Board, black, [_-human]), NewState) :-
         ;  Input = '2' -> Direction = 'V'
         ;  Input = '3' -> Direction = 'D'
         ;  Input = '4' -> Direction = 'T'),
-        (move(state(Board, black, [human-_]), (PieceRow, PieceColumn, Direction), NewState)
+        (move(state(Board, black, [Config-human]), (PieceRow, PieceColumn, Direction), NewState)
         -> true
         ; (Direction = 'T' 
           -> write('Transform not possible - no line of sight or invalid target. Try another move.'), nl, fail
@@ -426,15 +430,15 @@ get_move(state(Board, black, [_-human]), NewState) :-
         fail
     ).
 
-get_move(state(Board, white, [Level-_]), NewState) :-
+get_move(state(Board, white, [Level-Config]), NewState) :-
     repeat,
     choose_move(state(Board, white, _), Level, (PieceRow, PieceColumn, Direction)),
-    move(state(Board, white, [Level-_]), (PieceRow, PieceColumn, Direction), NewState).
+    move(state(Board, white, [Level-Config]), (PieceRow, PieceColumn, Direction), NewState).
 
-get_move(state(Board, black, [_-Level]), NewState) :-
+get_move(state(Board, black, [Config-Level]), NewState) :-
     repeat,
     choose_move(state(Board, black, _), Level, (PieceRow, PieceColumn, Direction)),
-    move(state(Board, black, [_-Level]), (PieceRow, PieceColumn, Direction), NewState).
+    move(state(Board, black, [Config-Level]), (PieceRow, PieceColumn, Direction), NewState).
 
 
 choose_move(state(Board, white, _), level1, (PieceRow, PieceColumn, Direction)) :-
@@ -501,15 +505,15 @@ separate_moves([(PieceRow, PieceColumn, Direction, Piece)|BestMoves], KingAux, O
     separate_moves(BestMoves, [(PieceRow, PieceColumn, Direction)|KingAux], OtherAux, KingMoves, OtherMoves).
 
 
-move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
+move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
     (P = w ; P = wk),
-    validate_move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
+    validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)).
 
-move(state(Board, black, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)) :-
+move(state(Board, black, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
     (P = b ; P = bk),
-    validate_move(state(Board, black, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, _)).
+    validate_move(state(Board, black, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)).
 
 get_piece_in_row([P|_], 1, P) :- !.
 
@@ -911,18 +915,77 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Piec
     PC2 is PC - 1,    
     replace_element(Board, PR2, PC2, Piece, NewBoard).
 
-validate_move(state(Board, white, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, black, _)) :-
+validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, black, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, Piece),
     (Piece = w ; Piece = wk),
+    count_kings(Board, black, CountBefore),
     calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, Direction), Piece, NB),
     PR is PieceRow - 1,
     PC is PieceColumn - 1,
-    replace_element(NB, PR, PC, empty, NewBoard).
+    replace_element(NB, PR, PC, empty, NewBoard),
+    count_kings(NewBoard, black, CountAfter),
+    verify_king_eaten(CountBefore, CountAfter, GameConfig, NewGameConfig).
 
-validate_move(state(Board, black, _), (PieceRow, PieceColumn, Direction), newState(NewBoard, white, _)) :-
+validate_move(state(Board, black, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, white, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, Piece),
     (Piece = b ; Piece = bk),
+    count_kings(Board, white, CountBefore),
     calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, Direction), Piece, NB),
     PR is PieceRow - 1,
     PC is PieceColumn - 1,
-    replace_element(NB, PR, PC, empty, NewBoard).
+    replace_element(NB, PR, PC, empty, NewBoard),
+    count_kings(NewBoard, white, CountAfter),
+    verify_king_eaten(CountBefore, CountAfter, GameConfig, NewGameConfig).
+
+
+count_kings(Board, Player, Count) :-
+    count_kings(Board, Player, 1, 0, Count).
+
+count_kings([], _, _, Count, Count) :- !.
+
+count_kings([Row|Rows], white, RowNumber, Aux, Count) :-
+    count_kings_row(Row, white, RowNumber, 1, 0, CountRow),
+    N is RowNumber + 1,
+    Aux2 is Aux + CountRow,
+    count_kings(Rows, white, N, Aux2, Count).
+
+
+count_kings([Row|Rows], black, RowNumber, Aux, Count) :-
+    count_kings_row(Row, black, RowNumber, 1, 0, CountRow),
+    N is RowNumber + 1,
+    Aux2 is Aux + CountRow,
+    count_kings(Rows, black, N, Aux2, Count).
+
+
+count_kings_row([], _, _, _, CountRow, CountRow) :- !.
+
+count_kings_row([Piece|Pieces], white, RowNumber, ColumnNumber, Aux, CountRow) :-
+    Piece = wk,
+    !,
+    N is ColumnNumber + 1,
+    Aux2 is Aux + 1,
+    count_kings_row(Pieces, white, RowNumber, N, Aux2, CountRow).
+
+count_kings_row([Piece|Pieces], white, RowNumber, ColumnNumber, Aux, CountRow) :-
+    !,
+    N is ColumnNumber + 1,
+    count_kings_row(Pieces, white, RowNumber, N, Aux, CountRow).
+
+count_kings_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, CountRow) :-
+    Piece = bk,
+    !,
+    N is ColumnNumber + 1,
+    Aux2 is Aux + 1,
+    count_kings_row(Pieces, black, RowNumber, N, Aux2, CountRow).
+
+count_kings_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, CountRow) :-
+    N is ColumnNumber + 1,
+    count_kings_row(Pieces, black, RowNumber, N, Aux, CountRow).
+
+
+verify_king_eaten(CountBefore, CountAfter, GameConfig, NewGameConfig) :-
+    CountBefore > CountAfter,
+    !,
+    NewGameConfig = gameOver.
+
+verify_king_eaten(CountBefore, CountAfter, GameConfig, GameConfig).
