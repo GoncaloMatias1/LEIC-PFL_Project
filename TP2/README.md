@@ -80,22 +80,49 @@ Pieces are represented as:
 - `wk`: White king
 - `bk`: Black king
 
-Example states:
+#### Example Game States
+Here are examples of different game states showing how the board is represented internally:
+
+1. Initial State
 ```prolog
-% Initial state snippet
-[empty,empty,empty,empty,empty,empty,empty,empty],
-[bk,b,empty,empty,empty,empty,empty,empty],
-...
+[
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [bk,b,b,b,empty,empty,empty,empty],
+    [b,b,b,b,empty,empty,empty,empty],
+    [b,b,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,w,w,w],
+    [empty,empty,empty,empty,w,w,w,w],
+    [empty,empty,empty,empty,w,w,w,wk]
+]
+```
 
-% Intermediate state snippet
-[empty,empty,w,empty,empty,empty,empty,empty],
-[empty,bk,empty,b,empty,empty,empty,empty],
-...
+2. Intermediate State (After Several Moves)
+```prolog
+[
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [bk,b,empty,b,empty,empty,empty,empty],
+    [b,empty,b,b,empty,empty,empty,empty],
+    [b,b,empty,empty,empty,w,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,w,w,empty],
+    [empty,empty,empty,empty,w,w,empty,w],
+    [empty,empty,empty,empty,w,empty,w,wk]
+]
+```
 
-% Final state snippet
-[wk,empty,empty,empty,empty,empty,empty,empty],
-[empty,empty,empty,empty,empty,empty,empty,empty],
-...
+3. Final State (White Wins by King Capture)
+```prolog
+[
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,b,empty,b,empty,empty,empty,empty],
+    [b,empty,b,b,empty,empty,empty,empty],
+    [b,b,empty,empty,empty,w,empty,empty],
+    [empty,empty,empty,empty,empty,empty,empty,empty],
+    [empty,empty,empty,empty,empty,w,w,empty],
+    [empty,empty,empty,empty,w,w,empty,w],
+    [empty,empty,empty,empty,w,empty,w,wk]
+]
 ```
 
 #### Move Representation
