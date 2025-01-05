@@ -4,8 +4,8 @@
 ### Group Information
 | Name             | Student Number | Contribution % | Tasks Performed |
 |------------------|---------------|----------------|-----------------|
-| Gonçalo Guedes da Conceição | up202206456 | 50% | Get piece based on move, White Player 1 move validation, PC level 1 and level 2 implementation|
-| Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king |
+| Gonçalo Guedes da Conceição | up202206456 | 50% | Get piece based on move, Choose move, Valid moves, Move validation, White Player 1 move validation, Game Over, PC level 1 and level 2 implementation, Value |
+| Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Display game, Choose move, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king |
 
 ### Installation and Execution
 #### Windows
@@ -93,6 +93,7 @@ Moves are represented as:
 ```
 - PieceRow, PieceColumn: Coordinates (1-8)
 - Direction: 'H' (Horizontal), 'V' (Vertical), 'D' (Diagonal), 'T' (Transform)
+- To use Transform a king has to be selected before, and then it will be asked for the coordinates of the piece to transform
 
 #### User Interaction
 - Menu-driven interface with clear options
@@ -110,7 +111,7 @@ Moves are represented as:
 - No game state saving
 
 #### Future Improvements
-1. Enhanced AI with deeper strategic thinking
+1. Enhanced AI with deeper strategic thinking, that also focus on placing the king on the opposite corner and can avoid places where pieces can be captured
 2. GUI implementation
 
 ### Bibliography
