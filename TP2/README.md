@@ -22,6 +22,9 @@
 ### Game Description
 Replica is a strategic two-player board game played on an 8x8 chessboard. The game combines elements of checkers with unique movement and transformation mechanics.
 
+![Game Board](./images/board.png)
+*Figure 1: Initial Game Board*
+
 #### Basic Rules
 - Players start with 12 pieces each (11 regular pieces and 1 king)
 - Pieces move in three ways:
@@ -31,9 +34,18 @@ Replica is a strategic two-player board game played on an 8x8 chessboard. The ga
 
 #### Victory Conditions
 - Moving a king to the opponent's corner
-- Capturing the opponent's king
 
-[vou meter aqui imagens]
+![Game Win](./images/win3.png)
+*Figure 2: First victory condition*
+
+- Capturing the opponent's king (any)
+
+![Game Win](./images/win.png)
+*Figure 3: Second victory condition*
+
+![Game Win](./images/win2.png)
+*Figure 4:  Victory*
+
 
 #### Information Sources
 - [Replica on Board Game Geek](https://boardgamegeek.com/boardgame/427267/replica)
@@ -95,6 +107,30 @@ Moves are represented as:
 - Direction: 'H' (Horizontal), 'V' (Vertical), 'D' (Diagonal), 'T' (Transform)
 - To use Transform a king has to be selected before, and then it will be asked for the coordinates of the piece to transform
 
+![Game Horizontal](./images/horiz.png)
+*Figure 5: Game Horizontal Feature*
+
+![Game Horizontal](./images/horiz2.png)
+*Figure 6: Game Horizontal Feature*
+
+![Game Vertical](./images/vertical1.png)
+*Figure 5: Game Vertical Feature*
+
+![Game Vertical](./images/vertical2.png)
+*Figure 6: Game Vertical Feature*
+
+![Game Diagonal](./images/diagonal.png)
+*Figure 7: Game Diagonal Feature*
+
+![Game Diagonal](./images/diagonal2.png)
+*Figure 8: Game Diagonal Feature*
+
+![Game Transform](./images/transform.png)
+*Figure 9: Game Transform Feature*
+
+![Game Transform](./images/transform2.png)
+*Figure 10: Game Transform Feature*
+
 #### User Interaction
 - Menu-driven interface with clear options
 - Input validation for:
@@ -103,6 +139,24 @@ Moves are represented as:
   - Movement direction
 - Error messages for invalid inputs
 - Board visualization after each move
+
+![Game Menu](./images/menu.png)
+*Figure 11: Initial Game Menu*
+
+![Game Menu](./images/menu2.png)
+*Figure 12: Game Menu Human-Human Move*
+
+![Game Menu](./images/menu3.png)
+*Figure 13: Game Menu Human-Computer*
+
+![Game Menu](./images/menu4.png)
+*Figure 14: Game Menu Computer-Human*
+
+![Game Menu](./images/menu5.png)
+*Figure 15: Game Menu Computer-Computer*
+
+![Game Menu](./images/menu6.png)
+*Figure 16: Game Menu Computer-Computer*
 
 ### Conclusions
 #### Current Limitations
