@@ -241,6 +241,9 @@ game_loop(state(Board, Player, GameConfig)) :-
                             TRANSFORM MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+% move(+GameState, +Move, -NewGameState)
+% Verifies if the move is valid and if it is saves the updated GameState in NewGameState
+
 % Handle transform move for white human player
 move(state(Board, white, [human-Config]), (KingRow, KingCol, 'T'), newState(NewBoard, black, [human-Config])) :-
     !,
@@ -289,11 +292,13 @@ move(state(Board, black, GameConfig), (KingRow, KingCol, 'T'), newState(NewBoard
     TC is TargetCol - 1,
     replace_element(Board, TR, TC, bk, NewBoard).
 
+% Handle other moves for white player
 move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
     (P = w ; P = wk),
     validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)).
 
+% Handle other moves for black player
 move(state(Board, black, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, NewPlayer, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, P),
     (P = b ; P = bk),
@@ -378,6 +383,10 @@ sign(0, 0).
                             MOVES
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+% Receives state and returns NewState, where NewState is the state updated after a valid move is played
+% It calls choose_move and move
+% It repeats until a valid move is played
+% If the player is human, it will also read the move and pass it to choose_move
 get_move(state(Board, white, [human-Config]), NewState) :-
     repeat,
     write('Select the piece you want to move by writing Row-Column.'), nl,
@@ -453,6 +462,8 @@ get_move(state(Board, black, [Config-Level]), NewState) :-
     move(state(Board, black, [Config-Level]), (PieceRow, PieceColumn, Direction), NewState).
 
 
+% valid_moves(+GameState, -ListOfMoves)
+% Tries vertical, horizontal and diagonal moves with all pieces of a player and saves them in ListOfMoves
 valid_moves(state(Board, Player, _), ListOfMoves) :-
     get_all_pieces(Board, Player, AllPieces),
     valid_moves(Board, Player, AllPieces, [], ListOfMoves).
@@ -478,6 +489,7 @@ valid_moves(Board, black, [(PieceRow-PieceColumn)|Pieces], Aux, ListOfMoves) :-
     valid_moves(Board, black, Pieces, Moves, ListOfMoves).
 
 
+% test_valid_move predicate is used to test if a move is valid
 test_valid_move(state(Board, white, _), (PieceRow, PieceColumn, 'H'), PC, Move) :-
     PC2 is PC - 1,
     PC2 > 0,
@@ -653,10 +665,15 @@ test_valid_move(state(Board, black, _), (PieceRow, PieceColumn, 'D'), (PR, PC), 
     Move = [].
 
 
+% choose_move(+GameState, +Level, -Move)
+
+% If the player is human, it receives the current game state, the level as human and the move chosen by the human player and returns true if the move is valid
+% If the move is transform, it will always return true
 choose_move(_, human, (_, _, Direction)) :-
     Direction = 'T',
     !.
 
+% If the move is not transform, it will get a list of all valid moves and verify if the move is in that list
 choose_move(state(Board, white, _), human, (PieceRow, PieceColumn, Direction)) :-
     valid_moves(state(Board, white, _), ListOfMoves),
     member((PieceRow, PieceColumn, Direction), ListOfMoves).
@@ -665,6 +682,8 @@ choose_move(state(Board, black, _), human, (PieceRow, PieceColumn, Direction)) :
     valid_moves(state(Board, black, _), ListOfMoves),
     member((PieceRow, PieceColumn, Direction), ListOfMoves).
 
+% If the player is computer, it receives the current game state and level and returns the move chosen by the computer player
+% Level 1 chooses a random direction. If it's not Transform, it will choose a move from all the valid moves
 choose_move(state(Board, white, _), level1, (PieceRow, PieceColumn, Direction)) :-
     random_member(Direction, ['H', 'V', 'D', 'T']),
     select_random_move(state(Board, white, _), (PieceRow, PieceColumn, Direction)).
@@ -673,6 +692,8 @@ choose_move(state(Board, black, _), level1, (PieceRow, PieceColumn, Direction)) 
     random_member(Direction, ['H', 'V', 'D', 'T']),
     select_random_move(state(Board, black, _), (PieceRow, PieceColumn, Direction)).
 
+% Level 2 chooses a random move from a list of the best moves, where transform is not included
+% If no move changes the value, it will choose a random move like level 1, and that move can be transform
 choose_move(state(Board, white, _), level2, (PieceRow, PieceColumn, Direction)) :-
     get_all_pieces(Board, white, AllPieces),
     get_best_moves(Board, white, AllPieces, BestMoves, InitialValue),
@@ -684,6 +705,7 @@ choose_move(state(Board, black, _), level2, (PieceRow, PieceColumn, Direction)) 
     select_best_move(state(Board, black, _), BestMoves, black, InitialValue, (PieceRow, PieceColumn, Direction)).
 
 
+% Used to select a random move
 select_random_move(state(Board, white, _), (PieceRow, PieceColumn, 'T')) :-
     !,
     get_all_pieces(Board, white, AllPieces),
@@ -704,6 +726,7 @@ select_random_move(state(Board, black, _), (PieceRow, PieceColumn, Direction)) :
     random_member((PieceRow, PieceColumn, Direction), ListOfMoves).
 
 
+% Used to select the best move, or random if no move changes the value
 select_best_move(state(Board, white, _), [(InitialValue-Move)|_], white, InitialValue, (PieceRow, PieceColumn, Direction)) :-
     !,
     random_member(Direction, ['H', 'V', 'D', 'T']),
@@ -718,6 +741,9 @@ select_best_move(_, BestMoves, _, _, Move) :-
     random_member((_-Move), BestMoves). 
 
 
+% Receives the current game state and returns a value measuring how good/bad the current game state is to the given Player
+% The formula used to calculate value is 50 * (12 - {number of opponet kings}) + (12 - {number of opponet non-king pieces})
+% It is used by computer level 2 to select the best moves
 value(state(Board, _, _), white, Value) :-
     count_kings(Board, black, KingCount),
     count_others(Board, black, OtherCount),
@@ -735,6 +761,7 @@ get_piece_in_row([Piece|Pieces], PieceColumn, P) :-
     N is PieceColumn - 1,
     get_piece_in_row(Pieces, N, P).
 
+% Returns the piece in a position
 get_piece([Row|_], 1, PieceColumn, P) :- 
     !,
     get_piece_in_row(Row, PieceColumn, P).
@@ -744,6 +771,7 @@ get_piece([Row|Rows], PieceRow, PieceColumn, P) :-
     get_piece(Rows, N, PieceColumn, P).
 
 
+% Returns all pieces from a player
 get_all_pieces(Board, Player, AllPieces) :-
     get_all_pieces(Board, Player, 1, [], AllPieces).
 
@@ -799,6 +827,7 @@ get_all_pieces_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, AllPiece
     get_all_pieces_row(Pieces, black, RowNumber, N, Aux, AllPiecesRow).
 
 
+% Returns all best moves
 get_best_moves(Board, Player, AllPieces, BestMoves, InitialValue) :-
     value(state(Board, _, _), Player, InitialValue),
     get_best_moves(Board, Player, AllPieces, InitialValue, [], BestMoves).
@@ -824,10 +853,14 @@ get_best_moves(Board, black, [(PieceRow-PieceColumn)|Pieces], Value, Aux, BestMo
     get_best_moves(Board, black, Pieces, FinalValue, Moves, BestMoves).
 
 
+% Appends a move to a list of best moves
+% If the move is 0 or the value is lower than the best value, it is ignored
 append_move_with_value(0, InitialValue, Moves, InitialValue, Moves) :- !.
 
+% If the value is the same, the move is appended
 append_move_with_value((Value-Move), Value, Moves, Value, [(Value-Move)|Moves]) :- !.
 
+% If the value is higher, it returns a list with just the move
 append_move_with_value((Value-Move), InitialValue, Moves, FinalValue, NewMoves) :-
     Value > InitialValue,
     !,
@@ -837,6 +870,8 @@ append_move_with_value((Value-Move), InitialValue, Moves, FinalValue, NewMoves) 
 append_move_with_value((Value-Move), InitialValue, Moves, InitialValue, Moves).
 
 
+% Tests if a move is valid
+% If it is it returns (Value-Move), else it returns 0
 test_move(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Move) :-
     validate_move(state(Board, white, _), (PieceRow, PieceColumn, 'H'), newState(NewBoard, _, _)),
     !,
@@ -897,6 +932,7 @@ test_move(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Move) :-
                             MOVE VALIDATION
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+% Calculates where the piece will land with a move. If it lands in a valid place, it saves the board updated in NewBoard
 calculate_destination(state(Board, white, _), (PieceRow, PieceColumn, 'H'), Piece, NewBoard) :-
     PC is PieceColumn - 1,
     PC > 0,
@@ -1073,6 +1109,7 @@ calculate_destination(state(Board, black, _), (PieceRow, PieceColumn, 'D'), Piec
     PC2 is PC - 1,    
     replace_element(Board, PR2, PC2, Piece, NewBoard).
 
+% Validates a move and, if it is valid, returns newState with the move played
 validate_move(state(Board, white, GameConfig), (PieceRow, PieceColumn, Direction), newState(NewBoard, black, NewGameConfig)) :-
     get_piece(Board, PieceRow, PieceColumn, Piece),
     (Piece = w ; Piece = wk),
@@ -1096,6 +1133,7 @@ validate_move(state(Board, black, GameConfig), (PieceRow, PieceColumn, Direction
     verify_king_eaten(CountBefore, CountAfter, GameConfig, NewGameConfig).
 
 
+% Counts the number of kings of a player
 count_kings(Board, Player, Count) :-
     count_kings(Board, Player, 1, 0, Count).
 
@@ -1141,6 +1179,7 @@ count_kings_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, CountRow) :
     count_kings_row(Pieces, black, RowNumber, N, Aux, CountRow).
 
 
+% Counts the number of non-king pieces of a player
 count_others(Board, Player, Count) :-
     count_others(Board, Player, 1, 0, Count).
 
@@ -1186,6 +1225,8 @@ count_others_row([Piece|Pieces], black, RowNumber, ColumnNumber, Aux, CountRow) 
     count_others_row(Pieces, black, RowNumber, N, Aux, CountRow).
 
 
+% Verifies if any king was captured.
+% If it was, NewGameConfig = gameOver, else NewGameConfig = GameConfig
 verify_king_eaten(CountBefore, CountAfter, GameConfig, NewGameConfig) :-
     CountBefore > CountAfter,
     !,
