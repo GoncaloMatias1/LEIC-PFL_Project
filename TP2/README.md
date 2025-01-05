@@ -179,9 +179,6 @@ Moves are represented as:
 ![Game Menu](./images/menu5.png)
 *Figure 15: Game Menu Computer-Computer*
 
-![Game Menu](./images/menu6.png)
-*Figure 16: Game Menu Computer-Computer*
-
 ### Conclusions
 #### Current Limitations
 - Basic AI implementation
