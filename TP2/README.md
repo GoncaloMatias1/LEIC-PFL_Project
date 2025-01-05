@@ -86,7 +86,6 @@ Here are examples of different game states showing how the board is represented 
 1. Initial State
 ```prolog
 [
-    [empty,empty,empty,empty,empty,empty,empty,empty],
     [bk,b,b,b,empty,empty,empty,empty],
     [b,b,b,b,empty,empty,empty,empty],
     [b,b,empty,empty,empty,empty,empty,empty],
@@ -100,7 +99,6 @@ Here are examples of different game states showing how the board is represented 
 2. Intermediate State (After Several Moves)
 ```prolog
 [
-    [empty,empty,empty,empty,empty,empty,empty,empty],
     [bk,b,empty,b,empty,empty,empty,empty],
     [b,empty,b,b,empty,empty,empty,empty],
     [b,b,empty,empty,empty,w,empty,empty],
@@ -114,7 +112,6 @@ Here are examples of different game states showing how the board is represented 
 3. Final State (White Wins by King Capture)
 ```prolog
 [
-    [empty,empty,empty,empty,empty,empty,empty,empty],
     [empty,b,empty,b,empty,empty,empty,empty],
     [b,empty,b,b,empty,empty,empty,empty],
     [b,b,empty,empty,empty,w,empty,empty],
