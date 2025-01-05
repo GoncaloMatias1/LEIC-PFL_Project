@@ -91,6 +91,11 @@ configure_computer_difficulty(Player, Config) :-
 % wk - white king
 % bk - black king
 
+% initial_state(+GameConfig, -GameState)
+% Initializes the game state with the initial board and player
+% GameConfig is a list with the configuration for each player
+% GameState is a term state(Board, Player, GameConfig)
+% where Board is the initial board, Player is the starting player and GameConfig is the configuration for each player
 initial_state(GameConfig, state(Board, white, GameConfig)) :-
     initial_board(Board).
 
@@ -172,6 +177,10 @@ replace_in_row(List, Index, Element, NewList) :-
                             DISPLAY FUNCTIONS
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+% display_game(+GameState)
+% Displays the current game state
+% GameState is a term state(Board, Player, GameConfig)
+% where Board is the current board, Player is the current player and GameConfig is the configuration for each player
 display_game(state(Board, Player, _)) :-
     nl,
     write('Current Player: '), write(Player), nl,
@@ -180,6 +189,11 @@ display_game(state(Board, Player, _)) :-
     display_board(Board, 1),
     nl.
 
+% display_board(+Board, +N)
+% Displays the board with the row number
+% Board is a list of lists representing the board
+% N is the current row number
+% The board is displayed with the row number on the left
 display_board([], _) :- !.
 display_board([Row|Rest], N) :-
     format('~w |', [N]),
@@ -188,11 +202,17 @@ display_board([Row|Rest], N) :-
     NextN is N + 1,
     display_board(Rest, NextN).
 
+% display_row(+Row)
+% Displays a row of the board
+% Row is a list representing a row of the board
 display_row([]) :- !.
 display_row([Cell|Rest]) :-
     display_cell(Cell),
     display_row(Rest).
 
+% display_cell(+Cell)
+% Displays a cell of the board
+% Cell is a piece in the board
 display_cell(empty) :- !, write(' . ').
 display_cell(w) :- !, write(' W ').
 display_cell(b) :- !, write(' B ').
