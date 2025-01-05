@@ -5,7 +5,7 @@
 | Name             | Student Number | Contribution % | Tasks Performed |
 |------------------|---------------|----------------|-----------------|
 | Gonçalo Guedes da Conceição | up202206456 | 50% | Get piece based on move, Choose move, Valid moves, Move validation, White Player 1 move validation, Game Over, PC level 1 and level 2 implementation, Value |
-| Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Display game, Choose move, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king |
+| Gonçalo de Abreu Matias | up202108703 | 50% |  Menu Implementation, Board Implementation, Display game, Choose move, Move validation, Black Player 2 move validation, King pieces capture, Game Over, Transform Friend piece into king, README, Intermediate and near-final game states for demo |
 
 ### Installation and Execution
 #### Windows
