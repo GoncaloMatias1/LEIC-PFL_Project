@@ -32,7 +32,11 @@ display_menu :-
     write('3. Computer vs Human'), nl,
     write('4. Computer vs Computer'), nl,
     write('0. Exit'), nl,
-    write('Choose an option (0-4): ').
+    write('Choose an option (0-4): '), nl,
+    write('Demo Options:'), nl,
+    write('5. Demo State 1 (Transform possibility)'), nl,
+    write('6. Demo State 2 (Jump capture scenario)'), nl,
+    write('7. Demo State 3 (Immediate win possibility)'), nl.
 
 read_menu_option(Choice) :-
     get_char(Input),
@@ -42,7 +46,10 @@ read_menu_option(Choice) :-
     ;  Input = '2' -> Choice = 2
     ;  Input = '3' -> Choice = 3
     ;  Input = '4' -> Choice = 4
-    ;  write('Invalid option! Please choose a number between 0 and 4.'), nl,
+    ;  Input = '5' -> Choice = 6
+    ;  Input = '6' -> Choice = 7
+    ;  Input = '7' -> Choice = 8
+    ;  write('Invalid option! Please choose a number between 0 and 7.'), nl,
        display_menu,
        read_menu_option(Choice)
     ).
@@ -50,6 +57,20 @@ read_menu_option(Choice) :-
 setup_game(0) :- 
     write('Thanks for playing!'), nl,
     halt.
+
+setup_game(6) :-
+    demo_state(2, GameState),
+    display_game(GameState),
+    game_loop(GameState).
+setup_game(7) :-
+    demo_state(3, GameState),
+    display_game(GameState),
+    game_loop(GameState).
+setup_game(8) :-
+    demo_state(4, GameState),
+    display_game(GameState),
+    game_loop(GameState).
+
 setup_game(Choice) :-
     Choice > 0,
     Choice =< 4,
@@ -93,6 +114,37 @@ configure_computer_difficulty(Player, Config) :-
 
 initial_state(GameConfig, state(Board, white, GameConfig)) :-
     initial_board(Board).
+
+demo_state(2, state(Board, black, GameConfig)) :-
+    empty_board(EmptyBoard),
+    % Demonstrates transform move possibility
+    place_piece(EmptyBoard, bk, 4, 4, B1),    % Black king in middle
+    place_piece(B1, wk, 6, 6, B2),            % White king still alive
+    place_piece(B2, b, 4, 6, B3),             % Black piece that can be transformed
+    place_piece(B3, w, 5, 5, B4),             % White piece
+    place_piece(B4, b, 3, 3, Board),          % Additional black piece
+    GameConfig = [human-human].
+
+demo_state(3, state(Board, white, GameConfig)) :-
+    empty_board(EmptyBoard),
+    % Demonstrates jump capture scenario
+    place_piece(EmptyBoard, w, 4, 4, B1),     % White piece that can jump
+    place_piece(B1, w, 3, 4, B2),             % White piece to jump over
+    place_piece(B2, b, 2, 4, B3),             % Black piece to capture
+    place_piece(B3, bk, 1, 1, B4),            % Black king (must be present)
+    place_piece(B4, wk, 7, 7, Board),         % White king (must be present)
+    GameConfig = [human-human].
+
+demo_state(4, state(Board, black, GameConfig)) :-
+    empty_board(EmptyBoard),
+    % Demonstrates near-win situation for black
+    place_piece(EmptyBoard, bk, 6, 6, B1),    % Black king near white's corner
+    place_piece(B1, w, 7, 7, B2),             % White piece in corner
+    place_piece(B2, w, 6, 7, B3),             % White defense piece
+    place_piece(B3, wk, 5, 5, B4),            % White king (must be present)
+    place_piece(B4, bk, 2, 2, Board),         % Second black king
+    GameConfig = [human-human].
+
 
 initial_board(Board) :-
     empty_board(EmptyBoard),
